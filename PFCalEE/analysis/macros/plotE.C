@@ -74,7 +74,7 @@ int plotE(){//main
     "e-/"
   };
 
-  TString pSuffix = "_run0_200um";
+  TString pSuffix = "_200um";
 
   const bool addNoiseTerm = false;
 
@@ -90,8 +90,8 @@ int plotE(){//main
 
   bool doMIPconv = false;
 
-  double MIPtoGeV = 183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
-  double offset = 318;//-1.04;//-4.3;//-38;//-1.06;
+  double MIPtoGeV = 245.71;//0.914;//41.69;//43.97;//0.92;// 41.98;
+  double offset = 431;//-1.04;//-4.3;//-38;//-1.06;
   
   char unitStr[10] = "MIPs";
 
@@ -108,7 +108,7 @@ int plotE(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={10,15,20,25,30,40,50,60,80,150,200,300,500};
+  unsigned genEn[]={10,15,20,25,30,40,50,60,80,100,150,200,300};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -300,6 +300,7 @@ int plotE(){//main
 	if ((version[iV] == "21" || version[iV] == "22") && pDetector == "ECAL") pDetector = "HCAL";
 	if (version[iV] == "21" && pDetector == "Total") pDetector = "SiSci";
 	if (version[iV] == "23" && pDetector == "Total") pDetector = "Calice";
+	pDetector += pSuffix;
 
 	if (isPU){//isPU
 	  p_EtotalPU = new TH1F("p_EtotalPU",";Etot (MeV)",100,p_Etotal[0]->GetBinLowEdge(1),p_Etotal[nGenEn-1]->GetBinLowEdge(p_Etotal[nGenEn-1]->GetNbinsX()+1));
