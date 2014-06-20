@@ -51,7 +51,7 @@
 //PhysicsList::PhysicsList():  QGSP_FTFP_BERT() //G4VUserPhysicsList()
 PhysicsList::PhysicsList():  QGSP_BERT() //G4VUserPhysicsList()
 {
-  defaultCutValue = 0.01*mm;
+  defaultCutValue = 0.04*mm;
   SetVerboseLevel(1);
 }
 
@@ -240,17 +240,17 @@ void PhysicsList::SetCuts()
       reg->SetProductionCuts(cuts);    
     }
 
-   //set smaller cut for Cu just before Si
-  const std::vector<G4LogicalVolume*> & logCu = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getAbsLogVol();
+  //  //set smaller cut for Cu just before Si
+  // const std::vector<G4LogicalVolume*> & logCu = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getAbsLogVol();
   
-  for(size_t i=0; i<logCu.size(); i++)
-    {
-      //sprintf(nameBuf,"Si%dReg",int(i+1)); 
-      G4Region* reg = logCu[i]->GetRegion();
-      G4ProductionCuts* cuts = new G4ProductionCuts;
-      cuts->SetProductionCut(defaultCutValue);
-      reg->SetProductionCuts(cuts);    
-    }
+  // for(size_t i=0; i<logCu.size(); i++)
+  //   {
+  //     //sprintf(nameBuf,"Si%dReg",int(i+1)); 
+  //     G4Region* reg = logCu[i]->GetRegion();
+  //     G4ProductionCuts* cuts = new G4ProductionCuts;
+  //     cuts->SetProductionCut(defaultCutValue);
+  //     reg->SetProductionCuts(cuts);    
+  //   }
 
   if (verboseLevel>0) DumpCutValuesTable();
 }

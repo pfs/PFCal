@@ -16,6 +16,7 @@ class G4VPhysicalVolume;
 class G4Material;
 class G4UniformMagField;
 class DetectorMessenger;
+class G4Colour;
 
 /**
    @class DetectorConstruction
@@ -38,6 +39,7 @@ public:
     v_HGCALEE_W=9,
     v_HGCALEE_gap4=10,
     v_HGCALEE_prePCB=11,
+    v_HGCALEE_v5=12,
     v_HGCAL=20,
     v_HGCALHE=21,
     v_HGCALHEScint=22,
@@ -61,6 +63,10 @@ public:
    */
   std::vector<SamplingSection> m_caloStruct;
   std::vector<SamplingSection> *getStructure() { return &m_caloStruct; }
+
+  int getModel() const { return model_; }
+  int getVersion() const { return version_; }
+
   const std::vector<G4LogicalVolume*>  & getSiLogVol() {return m_logicSi; }
   const std::vector<G4LogicalVolume*>  & getAbsLogVol() {return m_logicAbs; }
 
@@ -70,6 +76,7 @@ public:
    */
   void DefineMaterials(); 
   std::map<std::string, G4Material *> m_materials;
+  std::map<std::string, G4Colour > m_colours;
   
   /**
      @short set magnetic field

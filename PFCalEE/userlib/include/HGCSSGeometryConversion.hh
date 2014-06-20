@@ -11,7 +11,7 @@
 class HGCSSGeometryConversion{
   
 public:
-  HGCSSGeometryConversion(std::string filePath);
+  HGCSSGeometryConversion(std::string filePath,int model, double cellsize);
 
   ~HGCSSGeometryConversion();
 
@@ -23,10 +23,6 @@ public:
     return width_;
   };
   
-  inline void cellSize(const double & asize){
-    cellSize_ = asize;
-  };
-
   inline double cellSize() const{
     return cellSize_;
   };
@@ -78,6 +74,7 @@ private:
   double width_;
   double cellSize_;
   std::vector<unsigned> granularity_;
+  unsigned model_;
 
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapE_;
   std::map<DetectorEnum,std::vector<TH2D *> > HistMapTime_;

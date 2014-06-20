@@ -27,11 +27,12 @@
 
 int main(int argc, char** argv){//main  
 
-  if (argc < 6) {
+  if (argc < 7) {
     std::cout << " Usage: " 
 	      << argv[0] << " <nEvts to process (0=all)>"
-	      << " <path to input file>"
-	      << " <suffix to input file>"
+	      << " <path to input files>"
+	      << " <name of input sim file>"
+	      << " <name of input reco file>"
 	      << " <full path to output file>"
 	      << " <number of si layers to consider: 1,2 or 3>" 
 	      << " <optional: debug (default=0)>"
@@ -45,6 +46,8 @@ int main(int argc, char** argv){//main
   //for HGCAL, true means only 12 FHCAL layers considered (24 are simulated)
   bool concept = true;
 
+  bool selectEarlyDecays = true;
+
   double minX=-1700,maxX=1700;
   double minY=-1700,maxY=1700;
   double minZ=3170,maxZ=5070;
@@ -55,6 +58,8 @@ int main(int argc, char** argv){//main
   unsigned nX=(maxX-minX)/10,nY=(maxY-minY)/10;
   unsigned nZ=maxZ-minZ;
 
+  double HcalPionCalib = 0.901;//1./0.9;//1/0.846;
+  double HcalPionOffset = -0.81;
   // choose a jet definition
   //double R = 0.5;
   //JetDefinition jet_def(antikt_algorithm, R);
@@ -65,22 +70,28 @@ int main(int argc, char** argv){//main
 
   const unsigned pNevts = atoi(argv[1]);
   std::string filePath = argv[2];
-  std::string fileName = argv[3];
+  std::string simFileName = argv[3];
+  std::string recoFileName = argv[4];
 
-  std::string inFilePath = filePath+fileName;
+  std::string inFilePath = filePath+simFileName;
 
-  std::string outPath = argv[4];
+  std::string outPath = argv[5];
   unsigned nSiLayers = 2;
-  nSiLayers = atoi(argv[5]);
+  nSiLayers = atoi(argv[6]);
 
   unsigned debug = 0;
-  if (argc >6) debug = atoi(argv[6]);
+  if (argc >7) debug = atoi(argv[7]);
 
 
-  std::string pSuffix = "";
-  if (nSiLayers == 1) pSuffix = "_100um";
-  else if (nSiLayers == 3) pSuffix = "_300um";
 
+  if (selectEarlyDecays && 
+      (inFilePath.find("e-")!=inFilePath.npos || 
+       inFilePath.find("e+")!=inFilePath.npos)
+      ) {
+    selectEarlyDecays = false;
+    HcalPionCalib = 1;
+    HcalPionOffset = 0;
+  }
 
   std::cout << " -- Input parameters: " << std::endl
 	    << " -- Input file path: " << filePath << std::endl
@@ -98,6 +109,14 @@ int main(int argc, char** argv){//main
   bool isScintOnly =  inFilePath.find("version22")!=inFilePath.npos;
   bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
   bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
+  unsigned versionNumber = 0;
+  unsigned nchar = 0;
+  if (inFilePath.substr(inFilePath.find("version")+8,1)=="_") nchar = 1;
+  else nchar = 2;
+  std::string lvers = inFilePath.substr(inFilePath.find("version")+7,nchar);
+  std::istringstream(lvers)>>versionNumber;
+
+  std::cout << " -- Version number is : " << versionNumber << std::endl;
 
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
@@ -117,6 +136,15 @@ int main(int argc, char** argv){//main
     indices[4] = 24;
     indices[5] = 33;
     indices[6] = 33;
+  }
+  else if (versionNumber < 20){
+    indices[0] = 0;
+    indices[1] = versionNumber==8?11:10;
+    indices[2] = versionNumber==8?21:20;
+    indices[3] = versionNumber==8?31:30;
+    indices[4] = indices[3];
+    indices[5] = indices[3];
+    indices[6] = indices[3];
   }
   else {
     indices[0] = 0;
@@ -160,10 +188,10 @@ int main(int argc, char** argv){//main
 
   TH2F *p_EsimvsLayer = new TH2F("p_EsimvsLayer",";layer ; Esim (MIPs)",
 				 nLayers,0,nLayers,
-				 1000,0,50000);
+				 1000,0,5000);
   TH2F *p_ErecovsLayer = new TH2F("p_ErecovsLayer",";layer ; Ereco (MIPs)",
 				  nLayers,0,nLayers,
-				  1000,0,50000);
+				  1000,0,5000);
   TH1F *p_timeSim = new TH1F("p_timeSim",";G4 time (ns)",1000,0,1000);
   TH2F *p_HCALvsECAL = new TH2F("p_HCALvsECAL",";ECAL (GeV);HCAL (GeV)",
 				500,0,500,
@@ -172,19 +200,21 @@ int main(int argc, char** argv){//main
 				  500,0,500,
 				  500,0,500);
 
-  TH1F *p_nGenPart = new TH1F("p_nGenPart","n(genParticles)",200,0,200);
-  TH1F *p_genPartId = new TH1F("p_genPartId","pdgid",12000,-6000,6000);
+  TH1F *p_nGenPart = new TH1F("p_nGenPart",";n(genParticles)",200,0,200);
+  TH1F *p_genPartId = new TH1F("p_genPartId",";pdgid",12000,-6000,6000);
+
+  TH1F *p_firstInteraction = new TH1F("p_firstInteraction",";layer with 1st nucl. int.",nLayers,0,nLayers);
 
   TH1F *p_nSimHits = new TH1F("p_nSimHits","n(SimHits)",
-			      1000,0,5000000);
+			      1000,0,500000);
   p_nSimHits->StatOverflows();
   
   TH1F *p_nRecHits = new TH1F("p_nRecHits","n(RecHits)",
-			      1000,0,50000);
+			      1000,0,5000);
   p_nRecHits->StatOverflows();
 
-  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",50000,0,500000);
-  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",60000,0,600);
+  TH1F *p_EsimTotal = new TH1F("p_EsimTotal",";Esim (MIPs)",15000,0,300000);
+  TH1F *p_ErecoTotal = new TH1F("p_ErecoTotal",";Ereco (GeV)",12000,0,3000);
   p_EsimTotal->StatOverflows();
   p_ErecoTotal->StatOverflows();
 
@@ -219,18 +249,18 @@ int main(int argc, char** argv){//main
     lName.str("");
     lName << "p_Esim_" << myDetector.detName(iD);
     if (myDetector.detType(iD)==DetectorEnum::BHCAL1 || myDetector.detType(iD)==DetectorEnum::BHCAL2) p_Esim[iD] = new TH1F(lName.str().c_str(),";Esim (MIPs)",2000,0,20000);
-    else p_Esim[iD] = new TH1F(lName.str().c_str(),";Esim (MIPs)",2000,0,200000);
+    else p_Esim[iD] = new TH1F(lName.str().c_str(),";Esim (MIPs)",20000,0,200000);
     p_Esim[iD]->StatOverflows();
     lName.str("");
     lName << "p_Ereco_" << myDetector.detName(iD);
-    if (myDetector.detType(iD)==DetectorEnum::BHCAL1 || myDetector.detType(iD)==DetectorEnum::BHCAL2)  p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",2000,0,20000);
-    else p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",2000,0,200000);
+    if (myDetector.detType(iD)==DetectorEnum::BHCAL1 || myDetector.detType(iD)==DetectorEnum::BHCAL2)  p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",200,0,2000);
+    else p_Ereco[iD] = new TH1F(lName.str().c_str(),";Ereco (MIPs)",1000,0,10000);
     p_Ereco[iD]->StatOverflows();
   }
 
 
   std::ostringstream input;
-  input << filePath << "HGcal_" << fileName;
+  input << filePath << "/" << simFileName;
 
   TFile *simFile = TFile::Open(input.str().c_str());
 
@@ -247,7 +277,7 @@ int main(int argc, char** argv){//main
   }
 
   input.str("");
-  input << filePath << "Digi" << pSuffix << "_" << fileName;
+  input << filePath << "/" << recoFileName;
   
   TFile *recFile = TFile::Open(input.str().c_str());
 
@@ -315,6 +345,19 @@ int main(int argc, char** argv){//main
 
     p_nGenPart->Fill((*genvec).size());
 
+    unsigned firstInteraction = 0;
+
+    double refThicknessOdd = (*ssvec)[1].volX0trans();
+    if (refThicknessOdd == 0) {
+      std::cerr << " ERROR, ref thickness odd is " << refThicknessOdd << ", setting to 1..." << std::endl;
+      refThicknessOdd = 1;
+    }
+    double refThicknessEven = (*ssvec)[2].volX0trans();
+    if (refThicknessEven == 0) {
+      std::cerr << " ERROR, ref thickness odd is " << refThicknessEven << ", setting to 1..." << std::endl;
+      refThicknessEven = 1;
+    }
+
     for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
       HGCSSSimHit lHit = (*simhitvec)[iH];
 
@@ -322,7 +365,21 @@ int main(int argc, char** argv){//main
       if (lHit.silayer() >= nSiLayers) continue; 
 
       unsigned layer = lHit.layer();
+
+      if (layer >= nLayers) {
+	//std::cout << " WARNING! SimHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
+	continue;
+      }
+
+
       unsigned sec =  myDetector.getSection(layer);
+
+      if ( firstInteraction == 0 &&
+	   (lHit.nNeutrons()>0 || 
+	    lHit.nProtons()>0 ||
+	    lHit.nHadrons()>0 ) && 
+	   lHit.mainParentTrackID() > 0
+	   ) firstInteraction = layer;
 
       double posx = lHit.get_x();
       double posy = lHit.get_y();
@@ -344,11 +401,19 @@ int main(int argc, char** argv){//main
       EtotSim[layer] += energy;
       if (debug>1) std::cout << "-hit" << iH << "-" << layer << " " << energy << " " << EtotSim[layer];
 
-      Esim[sec] += energy;
+      double absweight = 1;
+      if (versionNumber==12){
+	//absweight = layer%2==0 ?
+	//(*ssvec)[layer].volX0trans()/refThicknessEven : 
+	//(*ssvec)[layer].volX0trans()/refThicknessOdd;
+	absweight = (*ssvec)[layer].volX0trans();
+      }
+      Esim[sec] += energy*absweight;
       
     }//loop on hits
 
     p_nSimHits->Fill((*simhitvec).size());
+    p_firstInteraction->Fill(firstInteraction);
 
     if (debug)  std::cout << std::endl;
 
@@ -366,6 +431,11 @@ int main(int argc, char** argv){//main
 
       double energy = lHit.energy();//in MIP already...
       unsigned layer = lHit.layer();
+
+      if (layer >= nLayers) {
+	//std::cout << " WARNING! RecoHits with layer " << layer << " outside of detector's definition range ! Please fix the digitiser or the detector definition used here. Ignoring..." << std::endl;
+	continue;
+      }
       unsigned sec =  myDetector.getSection(layer);
       
       p_recoxy[layer]->Fill(posx,posy,energy);
@@ -377,57 +447,72 @@ int main(int argc, char** argv){//main
     
     p_nRecHits->Fill((*rechitvec).size());
 
+    double Eecal = 0;
+    if (myDetector.section(DetectorEnum::FECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::FECAL),Ereco[myDetector.section(DetectorEnum::FECAL)]);
+    if (myDetector.section(DetectorEnum::MECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::MECAL),Ereco[myDetector.section(DetectorEnum::MECAL)]);
+    if (myDetector.section(DetectorEnum::BECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BECAL),Ereco[myDetector.section(DetectorEnum::BECAL)]);
+    double Efhcal = 0;
+    if (myDetector.section(DetectorEnum::FHCAL)<nSections) Efhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::FHCAL),Ereco[myDetector.section(DetectorEnum::FHCAL)]);
+    double Ebhcal = 0;
+    if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL1),Ereco[myDetector.section(DetectorEnum::BHCAL1)]);
+    if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetectorByEnum(DetectorEnum::BHCAL2),Ereco[myDetector.section(DetectorEnum::BHCAL2)]);
+
+    double Etotcal = Eecal+(Efhcal+Ebhcal-HcalPionOffset)/HcalPionCalib;
+
+    bool doFill = true;
+    if (selectEarlyDecays && firstInteraction>5) doFill = false;
+
+
     //fill histos
-    double EtmpSim[nSections];
-    double EtmpRec[nSections];  
+    double EtmpSim = 0;//[nSections];
+    double EtmpRec = 0;//[nSections];  
+    //for (unsigned iD(0); iD<nSections; ++iD){
+    //EtmpSim[iD] = 0;
+    //EtmpRec[iD] = 0;
+    //}
+    
+    double etotmips = 0;
     for (unsigned iD(0); iD<nSections; ++iD){
-      EtmpSim[iD] = 0;
-      EtmpRec[iD] = 0;
+      etotmips += Esim[iD]*(versionNumber==12?1:myDetector.subDetectorBySection(iD).absWeight);
     }
+    
     for (unsigned iL(0);iL<nLayers;++iL){//loop on layers
       if (debug) std::cout << " -- Layer " << iL 
 			   << " total sim E = " << EtotSim[iL] 
 			   << " total rec E = " << EtotRec[iL] 
 			   << std::endl;
       unsigned sec =  myDetector.getSection(iL);
-      p_EsimvsLayer->Fill(iL,EtotSim[iL]);
-      p_ErecovsLayer->Fill(iL,EtotRec[iL]);
-      EtmpSim[sec] += EtotSim[iL];
-      EtmpRec[sec] += EtotRec[iL];
-      if (Esim[sec]>0) p_EfracSim[iL]->Fill(EtmpSim[sec]/Esim[sec]);
-      else p_EfracSim[iL]->Fill(0);
-      if (Ereco[sec]>0) p_EfracReco[iL]->Fill(EtmpRec[sec]/Ereco[sec]);
-      else p_EfracReco[iL]->Fill(0);
+      if (doFill) p_EsimvsLayer->Fill(iL,EtotSim[iL]);
+      if (doFill) p_ErecovsLayer->Fill(iL,EtotRec[iL]);
+      EtmpSim += EtotSim[iL];
+      EtmpRec += EtotRec[iL];
+      if (doFill) {
+	if (etotmips>0) p_EfracSim[iL]->Fill(EtmpSim/etotmips);
+	else p_EfracSim[iL]->Fill(0);
+	if (Etotcal>0) p_EfracReco[iL]->Fill(EtmpRec/Etotcal);
+	else p_EfracReco[iL]->Fill(0);
+      }
       EtotSim[iL] = 0;
       EtotRec[iL] = 0;
 	
     }//loop on layers
+    if (doFill) {
+      p_HCALvsECAL->Fill(Eecal,Efhcal+Ebhcal);
+      p_BHCALvsFHCAL->Fill(Efhcal,Ebhcal);
+    }
 
-    double Eecal = 0;
-    if (myDetector.section(DetectorEnum::FECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::FECAL),Ereco[myDetector.section(DetectorEnum::FECAL)]);
-    if (myDetector.section(DetectorEnum::MECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::MECAL),Ereco[myDetector.section(DetectorEnum::MECAL)]);
-    if (myDetector.section(DetectorEnum::BECAL)<nSections) Eecal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BECAL),Ereco[myDetector.section(DetectorEnum::BECAL)]);
-    double Efhcal = 0;
-    if (myDetector.section(DetectorEnum::FHCAL)<nSections) Efhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::FHCAL),Ereco[myDetector.section(DetectorEnum::FHCAL)]);
-    double Ebhcal = 0;
-    if (myDetector.section(DetectorEnum::BHCAL1)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BHCAL1),Ereco[myDetector.section(DetectorEnum::BHCAL1)]);
-    if (myDetector.section(DetectorEnum::BHCAL2)<nSections) Ebhcal += myDigitiser.MIPtoGeV(myDetector.subDetector(DetectorEnum::BHCAL2),Ereco[myDetector.section(DetectorEnum::BHCAL2)]);
-
-    p_HCALvsECAL->Fill(Eecal,Efhcal+Ebhcal);
-    p_BHCALvsFHCAL->Fill(Efhcal,Ebhcal);
-
-    double etotmips = 0;
     for (unsigned iD(0); iD<nSections; ++iD){
-      p_Esim[iD]->Fill(Esim[iD]);
-      p_Ereco[iD]->Fill(Ereco[iD]);
-      etotmips += Esim[iD]*myDetector.subDetector(iD).absWeight;
+      if (doFill)p_Esim[iD]->Fill(Esim[iD]);
+      if (doFill)p_Ereco[iD]->Fill(Ereco[iD]);
       Esim[iD]=0;
       Ereco[iD]=0;
     }
-
-    p_EsimTotal->Fill(etotmips);
-    p_ErecoTotal->Fill(Eecal+Efhcal+Ebhcal);
-
+    
+    if (doFill){
+      p_EsimTotal->Fill(etotmips);
+      p_ErecoTotal->Fill(Etotcal);
+    }
+    
   }//loop on entries
   
   //write

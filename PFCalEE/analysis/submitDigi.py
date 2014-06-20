@@ -29,12 +29,12 @@ nevents=opt.Nevts
 
 for version in [23]:
     #for particle in ["Gamma","GammaPU","PU"]:
-    for particle in ["pi-"]: #"SimplePU"]:
+    for particle in ["e-","pi-"]: #"SimplePU"]:
         #for eta in [30,35]:
         #for eta in [20,25,30,35]:
         eosDir='%s/%s'%(opt.eos,particle)
         #for en in [5,10,25,40,50,60,80,100,150,200,300,400,500,1000]:
-        for en in [10,15,20,25,30,35,40,45,50,60,80,100,200,300,400,500]:
+        for en in [10,15,20,25,30,35,40,45,50,60,80]: #,100,200,300,400,500]:
             #for en in [0,1,2,3,4,5,6,7,8,9]:
             #for en in [5,10,25,50,75,100]:
             #for en in [150,200,300,500]:

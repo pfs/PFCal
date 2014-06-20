@@ -31,6 +31,7 @@ extern void G__set_cpp_environmentdict();
 
 #include "TObject.h"
 #include "TMemberInspector.h"
+#include "HGCSSInfo.hh"
 #include "HGCSSEvent.hh"
 #include "HGCSSSamplingSection.hh"
 #include "HGCSSSimHit.hh"
@@ -52,6 +53,7 @@ extern G__linked_taginfo G__dictLN_vectorlEROOTcLcLTSchemaHelpercOallocatorlEROO
 extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlEROOTcLcLTSchemaHelpercOallocatorlEROOTcLcLTSchemaHelpergRsPgRcLcLiteratorgR;
 extern G__linked_taginfo G__dictLN_vectorlETVirtualArraymUcOallocatorlETVirtualArraymUgRsPgR;
 extern G__linked_taginfo G__dictLN_reverse_iteratorlEvectorlETVirtualArraymUcOallocatorlETVirtualArraymUgRsPgRcLcLiteratorgR;
+extern G__linked_taginfo G__dictLN_HGCSSInfo;
 extern G__linked_taginfo G__dictLN_HGCSSEvent;
 extern G__linked_taginfo G__dictLN_HGCSSSamplingSection;
 extern G__linked_taginfo G__dictLN_vectorlEHGCSSSamplingSectioncOallocatorlEHGCSSSamplingSectiongRsPgR;

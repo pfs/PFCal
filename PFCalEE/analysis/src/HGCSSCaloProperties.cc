@@ -2,6 +2,7 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSSamplingSection.hh"
 #include "HGCSSEvent.hh"
+#include "HGCSSInfo.hh"
 #include "RooGaussian.h"
 #include "RooPlot.h"
 #include "TRandom.h"
@@ -40,7 +41,8 @@ void ShowerProfile::writeTo(TDirectory *dir)
 bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *tuple)
 {
   TF1 *showerFunc=0;
-   
+  Double_t cellSize = 0;
+
   //prepare to run over the ntuple with the information
   TChain *HGCSSTree=new TChain("HGCSSTree");
   for(int irun=0; irun<4; irun++)
@@ -49,6 +51,11 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *
       //indirpath << "/afs/cern.ch/work/a/amagnan/public/HGCalEEGeant4/version_3/e-/e_" << (Int_t) eElec << "/PFcal.root";
       //indirpath << "root://eoscms//eos/cms/store/cmst3/group/hgcal/Geant4/HGcal_" << version << "_e" << (Int_t) eElec << ".root";
       indirpath << "root://eoscms//eos/cms/store/user/amagnan/HGCalEEGeant4/gitV00-00-02/e-/HGcal_" << version << "_model3_BOFF_e" << (Int_t) eElec << "_run"<< irun << ".root";
+      TFile *inputFile = TFile::Open(indirpath.str().c_str());
+      HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
+      cellSize=info->cellSize();
+      std::cout << "Cell size is " << cellSize << std::endl;
+      inputFile->Close();
       TString inDir(indirpath.str().c_str()); 
       cout << "Adding " << inDir << " for analysis" << endl;
       HGCSSTree->Add(inDir);
@@ -78,7 +85,7 @@ bool ShowerProfile::buildShowerProfile(Float_t eElec, TString version, TNtuple *
     {
       HGCSSTree->GetEntry(i);
       UInt_t curEvent(event->eventNumber());
-      Double_t cellSize(event->cellSize());
+      //Double_t cellSize(event->cellSize());
 
       Float_t totEnInHits(0),totEnInHits2(0),totEnInHits7(0),totEnInHits20(0), totEnInHitsDyn(0), totNmipHits(0);
       for (unsigned iH(0); iH<(*hitvec).size(); ++iH)

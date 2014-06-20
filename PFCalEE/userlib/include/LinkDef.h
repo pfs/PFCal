@@ -1,3 +1,4 @@
+#pragma link C++ class HGCSSInfo+;
 #pragma link C++ class HGCSSEvent+;
 #pragma link C++ class HGCSSSamplingSection+;
 #pragma link C++ class vector<HGCSSSamplingSection>+;

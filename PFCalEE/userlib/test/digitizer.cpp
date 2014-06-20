@@ -17,6 +17,7 @@
 #include "fastjet/ClusterSequence.hh"
 
 #include "HGCSSEvent.hh"
+#include "HGCSSInfo.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
 #include "HGCSSRecoJet.hh"
@@ -78,6 +79,7 @@ int main(int argc, char** argv){//main
 	      << "<noise (in Mips) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
 	      << "<threshold (in ADC counts) \"layer_i-layer_j:factor,layer:factor,...\">"<< std::endl
 	      << std::endl
+      //	      << "<optional: model (default=\"model2\")> "  << std::endl
 	      << "<optional: randomSeed (default=0)> "  << std::endl
 	      << "<optional: debug (default=0)>" << std::endl
 	      << "<optional: save sim hits (default=0)> " << std::endl
@@ -107,11 +109,13 @@ int main(int argc, char** argv){//main
 	    << " -- thresholds: " << threshStr << std::endl
     ;
 	    
+  //std::string pModel = "model2";
   unsigned debug = 0;
   unsigned pSeed = 0;
   bool pSaveDigis = 0;
   bool pSaveSims = 0;
   bool pMakeJets = false;
+  //if (nPar > nReqA) pModel = argv[nReqA];
   if (nPar > nReqA) std::istringstream(argv[nReqA])>>pSeed;
   if (nPar > nReqA+1) {
     debug = atoi(argv[nReqA+1]);
@@ -121,7 +125,15 @@ int main(int argc, char** argv){//main
   if (nPar > nReqA+3) std::istringstream(argv[nReqA+3])>>pSaveSims;
   if (nPar > nReqA+4) std::istringstream(argv[nReqA+4])>>pMakeJets;
   
-  std::cout << " -- Random seed will be set to : " << pSeed << std::endl;
+  //try to get model automatically
+  //if (inFilePath.find("model0")!=inFilePath.npos) pModel = "model0";
+  //else if (inFilePath.find("model1")!=inFilePath.npos) pModel = "model1";
+  //else if (inFilePath.find("model2")!=inFilePath.npos) pModel = "model2";
+  //else if (inFilePath.find("model3")!=inFilePath.npos) pModel = "model3";
+
+
+  //std::cout << " -- Model is set to : " << pModel << std::endl;
+  std::cout<< " -- Random seed will be set to : " << pSeed << std::endl;
   if (pSaveDigis) std::cout << " -- DigiHits are saved." << std::endl;
   if (pSaveSims) std::cout << " -- SimHits are saved." << std::endl;
   if (pMakeJets) std::cout << " -- Making jets." << std::endl;
@@ -141,15 +153,64 @@ int main(int argc, char** argv){//main
   //// End Hardcoded config ////////////////////////////////////
   //////////////////////////////////////////////////////////
 
+
+  /////////////////////////////////////////////////////////////
+  //input
+  /////////////////////////////////////////////////////////////
+
+  std::string inputStr = inFilePath ;
+  TFile *inputFile = TFile::Open(inputStr.c_str());
+  
+  if (!inputFile) {
+    std::cout << " -- Error, input file " << inputStr << " cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+
+  TTree *inputTree = (TTree*)inputFile->Get("HGCSSTree");
+  if (!inputTree){
+    std::cout << " -- Error, tree HGCSSTree  cannot be opened. Exiting..." << std::endl;
+    return 1;
+  }
+
+
+  /////////////////////////////////////////////////////////////
+  //input tree
+  /////////////////////////////////////////////////////////////
+
+  HGCSSInfo * info=(HGCSSInfo*)inputFile->Get("Info");
+  const double cellSize = info->cellSize();
+  const unsigned versionNumber = info->version();
+  const unsigned model = info->model();
+  
+  //models 0,1 or 3.
+  bool isTBsetup = (model != 2);
+
+
+  HGCSSEvent * event=0;
+  std::vector<HGCSSSimHit> * hitvec = 0;
+
+  inputTree->SetBranchAddress("HGCSSEvent",&event);
+  inputTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
+    
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
-  bool isScintOnly =  inFilePath.find("version22")!=inFilePath.npos;
-  bool isHCALonly = inFilePath.find("version21")!=inFilePath.npos || isScintOnly;
-  bool isCaliceHcal = inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
+  bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
+
+  //unsigned versionNumber = 0;
+  //unsigned nchar = 0;
+  //if (inFilePath.substr(inFilePath.find("version")+8,1)=="_") nchar = 1;
+  //else nchar = 2;
+  //std::string lvers = inFilePath.substr(inFilePath.find("version")+7,nchar);
+  //std::istringstream(lvers)>>versionNumber;
+  
+  std::cout << " -- Version number is : " << versionNumber 
+	    << ", model = " << model
+	    << ", cellSize = " << cellSize
+	    << std::endl;
 
   unsigned indices[7] = {0,0,0,0,0,0,0};
   //fill layer indices
-  if (isScintOnly) {
+  if (versionNumber==22) {
     indices[4] = 0;
     indices[5] = 9;
     indices[6] = 9;
@@ -160,11 +221,20 @@ int main(int argc, char** argv){//main
     indices[5] = 47;
     indices[6] = 54;
   }
-  else if (isHCALonly) {
+  else if (versionNumber==21) {
     indices[3] = 0;
     indices[4] = 24;
     indices[5] = 33;
     indices[6] = 33;
+  }
+  else if (versionNumber < 20){
+    indices[0] = 0;
+    indices[1] = versionNumber==8?11:10;
+    indices[2] = versionNumber==8?21:20;
+    indices[3] = versionNumber==8?31:30;
+    indices[4] = indices[3];
+    indices[5] = indices[3];
+    indices[6] = indices[3];
   }
   else {
     indices[0] = 0;
@@ -183,7 +253,7 @@ int main(int argc, char** argv){//main
 
   const unsigned nLayers = myDetector.nLayers();
 
-  HGCSSGeometryConversion geomConv(inFilePath);
+  HGCSSGeometryConversion geomConv(inFilePath,model,cellSize);
   //const double xWidth = geomConv.getXYwidth();
 
   HGCSSDigitisation myDigitiser;
@@ -242,6 +312,11 @@ int main(int argc, char** argv){//main
     std::cout << " -- File will be saved as " << outputStr.str() << std::endl;
   }
 
+  HGCSSInfo *lInfo = new HGCSSInfo();
+  lInfo->cellSize(cellSize);
+  lInfo->version(versionNumber);
+  lInfo->version(model);
+
   TTree *outputTree = new TTree("RecoTree","HGC Standalone simulation reco tree");
   HGCSSSimHitVec lSimHits;
   HGCSSRecoHitVec lDigiHits;
@@ -259,35 +334,6 @@ int main(int argc, char** argv){//main
   TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-5,5);
 
   /////////////////////////////////////////////////////////////
-  //input
-  /////////////////////////////////////////////////////////////
-
-  std::string inputStr = inFilePath ;
-  TFile *inputFile = TFile::Open(inputStr.c_str());
-  
-  if (!inputFile) {
-    std::cout << " -- Error, input file " << inputStr << " cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-
-  TTree *inputTree = (TTree*)inputFile->Get("HGCSSTree");
-  if (!inputTree){
-    std::cout << " -- Error, tree HGCSSTree  cannot be opened. Exiting..." << std::endl;
-    return 1;
-  }
-
-
-  /////////////////////////////////////////////////////////////
-  //input tree
-  /////////////////////////////////////////////////////////////
-
-  HGCSSEvent * event=0;
-  std::vector<HGCSSSimHit> * hitvec = 0;
-
-  inputTree->SetBranchAddress("HGCSSEvent",&event);
-  inputTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
-    
-  /////////////////////////////////////////////////////////////
   //Loop on events
   /////////////////////////////////////////////////////////////
 
@@ -301,16 +347,7 @@ int main(int argc, char** argv){//main
 
     inputTree->GetEntry(ievt);
     lEvent.eventNumber(event->eventNumber());
-    const double cellSize = event->cellSize();
-    lEvent.cellSize(cellSize);
     
-    //sanity check
-    if (geomConv.cellSize() != cellSize){
-      std::cerr << " -- Warning ! Cellsize is not as expected. Reinitialising 2-D histograms... " << std::endl;
-      geomConv.cellSize(cellSize);
-      geomConv.initialiseHistos(true);
-    }
-
     //unsigned layer = volNb;
     
     if (debug>0) {
@@ -329,7 +366,7 @@ int main(int argc, char** argv){//main
       if (lHit.energy()>0 && pSaveSims) lSimHits.push_back(lHit);
       unsigned layer = lHit.layer();
       if (layer != prevLayer){
-	const HGCSSSubDetector & subdet = myDetector.subDetector(layer);
+	const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
 	type = subdet.type;
 	subdetLayer = layer-subdet.layerIdMin;
 	prevLayer = layer;
@@ -340,11 +377,22 @@ int main(int argc, char** argv){//main
       double posy = lHit.get_y(cellSize);
       double posz = lHit.get_z();
       double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
+      bool passTime = myDigitiser.passTimeCut(type,realtime);
+      if (!passTime) continue;
+
       if (energy>0 && 
 	  lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
-	  )
+	  ){
+	if (debug > 1) std::cout << " hit " << iH 
+				 << " lay " << layer  
+				 << " x " << posx 
+				 << " y " << posy
+				 << " z " << posz
+				 << " t " << lHit.time() << " " << realtime
+				 << std::endl;
 	geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-      
+      }
+
     }//loop on input simhits
 
     if (debug>1) {
@@ -360,7 +408,7 @@ int main(int argc, char** argv){//main
       TH2D *histE = geomConv.get2DHist(iL,"E");
       TH2D *histTime = geomConv.get2DHist(iL,"Time");
       TH2D *histZ = geomConv.get2DHist(iL,"Z");
-      const HGCSSSubDetector & subdet = myDetector.subDetector(iL);
+      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
       DetectorEnum adet = subdet.type;
       bool isScint = subdet.isScint;
       bool isSi = subdet.isSi;
@@ -378,22 +426,24 @@ int main(int argc, char** argv){//main
 	for (int iY(1); iY<histE->GetNbinsY()+1;++iY){
 	  double digiE = 0;
 	  double simE = histE->GetBinContent(iX,iY);
-	  double time = 0;
-	  if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
+	  //double time = 0;
+	  //if (simE>0) time = histTime->GetBinContent(iX,iY)/simE;
 
-	  bool passTime = myDigitiser.passTimeCut(adet,time);
-	  if (!passTime) continue;
+	  //bool passTime = myDigitiser.passTimeCut(adet,time);
+	  //if (!passTime) continue;
 
 	  double posz = 0;
+	  //for noise only hits
 	  if (simE>0) posz = histZ->GetBinContent(iX,iY)/simE;
 	  else posz = meanZpos;
+
 	  double x = histE->GetXaxis()->GetBinCenter(iX);
 	  double y = histE->GetYaxis()->GetBinCenter(iY);
 
 	  //if (fabs(x) > 500 || fabs(y)>500) std::cout << " x=" << x << ", y=" << y << std::endl;
 
 	  //correct for particle angle in conversion to MIP
-	  double simEcor = myDigitiser.mipCor(simE,x,y,posz);
+	  double simEcor = isTBsetup ? simE : myDigitiser.mipCor(simE,x,y,posz);
 	  digiE = simEcor;
 
 	  if (isScint && simEcor>0) {
@@ -410,7 +460,7 @@ int main(int argc, char** argv){//main
 	    adc = myDigitiser.adcConverter(digiE,adet);
 	    digiE = myDigitiser.adcToMIP(adc,adet);
 	  }
-	  bool aboveThresh = 
+	  bool aboveThresh = //digiE > 0.5;
 	    (isSi && adc > pThreshInADC[iL]) ||
 	    (isScint && digiE > pThreshInADC[iL]*myDigitiser.adcToMIP(1,adet,false));
 	  //histE->SetBinContent(iX,iY,digiE);
@@ -512,6 +562,7 @@ int main(int argc, char** argv){//main
   }//loop on entries
 
   outputFile->cd();
+  outputFile->WriteObjectAny(lInfo,"HGCSSInfo","Info");
   outputTree->Write();
   p_noise->Write();
   outputFile->Close();

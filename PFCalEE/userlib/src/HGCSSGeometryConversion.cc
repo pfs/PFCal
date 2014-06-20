@@ -3,19 +3,22 @@
 #include <iostream>
 #include <cmath>
 
-HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath){
+HGCSSGeometryConversion::HGCSSGeometryConversion(std::string filePath, int model, double cellsize){
+
   width_ = 200;//mm
-  if (filePath.find("model1")!=filePath.npos) width_ = 500;
-  else if (filePath.find("model2")!=filePath.npos) width_ = 1700*2;
-  else if (filePath.find("model3")!=filePath.npos) width_ = 1000;
-
-  cellSize_ = 2.5;
-
+  model_ = model;
+  if (model==1) width_ = 500;
+  else if (model == 2) width_ = 1700*2;
+  else if (model == 3) width_ = 1000;
+  
+  cellSize_ = cellsize;
+  
 }
 
 unsigned HGCSSGeometryConversion::getNumberOfSiLayers(const DetectorEnum type,
 						      const double & eta) const
 {
+  if (model_ != 2) return 3;
   if (type == DetectorEnum::FHCAL) return 3;
   unsigned etaBin = 0;
   if (fabs(eta)>=1.4 && fabs(eta)<1.9) etaBin = 1;
@@ -73,17 +76,17 @@ void HGCSSGeometryConversion::setGranularity(const std::vector<unsigned> & granu
  void HGCSSGeometryConversion::initialiseHistos(const bool recreate){
 
    for (unsigned iS(0); iS<theDetector().nSections();++iS){
-     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapE_[theDetector().detType(iS)],"EmipHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
      //std::cout << " check: " << HistMapE_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecE;
      avgvecE.resize(theDetector().nLayers(iS),0);
      avgMapE_[theDetector().detType(iS)]=avgvecE;
      
-     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapTime_[theDetector().detType(iS)],"TimeHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
      //std::cout << " check: " << HistMapTime_[theDetector().detType(iS)].size() << std::endl;
 
-     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetector(iS),theDetector().nLayers(iS),recreate);
+     resetVector(HistMapZ_[theDetector().detType(iS)],"zHits",theDetector().detName(iS),theDetector().subDetectorBySection(iS),theDetector().nLayers(iS),recreate);
      //std::cout << " check: " << HistMapZ_[theDetector().detType(iS)].size() << std::endl;
      
      std::vector<double> avgvecZ;
@@ -108,7 +111,7 @@ void HGCSSGeometryConversion::fill(const DetectorEnum type,
 }
 
 double HGCSSGeometryConversion::getAverageZ(const unsigned layer){
-  const HGCSSSubDetector & subdet = theDetector().subDetector(layer);
+  const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
   double avg = 0;
   if (avgMapE_[subdet.type][newlayer]>0)
@@ -117,7 +120,7 @@ double HGCSSGeometryConversion::getAverageZ(const unsigned layer){
 }
 
 TH2D * HGCSSGeometryConversion::get2DHist(const unsigned layer,std::string name){
-  const HGCSSSubDetector & subdet = theDetector().subDetector(layer);
+  const HGCSSSubDetector & subdet = theDetector().subDetectorByLayer(layer);
   unsigned newlayer = layer-subdet.layerIdMin;
   if (name == "E") return HistMapE_[subdet.type][newlayer];
   else if (name == "Time") return HistMapTime_[subdet.type][newlayer];

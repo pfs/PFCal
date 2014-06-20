@@ -74,25 +74,34 @@ int plotE(){//main
     "e-/"
   };
 
-  TString pSuffix = "_run0_200um";
+  TString pSuffix = "";
 
-  const bool addNoiseTerm = false;
+  unsigned rebinSim = 8;//4;//2;
+  unsigned rebinReco = 1;//2;//40;
+
+  bool addNoiseTerm = false;
+  bool doReco = false;
 
   const unsigned nV = 1;
-  TString version[nV] = {"8"};//,"0"};
+  TString version[nV] = {"12"};//,"0"};
   
-  const unsigned nLayers = 31;//9;//33; //54;
+  const unsigned nLayers = 30;//9;//33; //54;
 
-  const bool doFrac = false;
+  const bool doVsE = true;
+
+  const bool doFrac = true;
   const bool doShower = false;
 
   TString pDetector = "Total";//"_FHCAL";
 
   bool doMIPconv = false;
 
-  double MIPtoGeV = 183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
-  double offset = 318;//-1.04;//-4.3;//-38;//-1.06;
-  
+  //double MIPtoGeVsim = 39.74;//0.831;//39.22;//183.;//0.914;//41.69;//43.97;//0.92;// 41.98;
+  //double offsetsim = 0;//-0.7;//-1.6;//318;//-1.04;//-4.3;//-38;//-1.06;
+  double MIPtoGeV = 278;//0.90;//39.33;
+  double G4MIPtoGeV = 1;//277.64;//39.33*0.90;
+  double offset = -79;//-0.77;//-1.8;
+
   char unitStr[10] = "MIPs";
 
   const unsigned MAX = 8;
@@ -108,7 +117,8 @@ int plotE(){//main
   bool isPU = false;
   
   
-  unsigned genEn[]={10,15,20,25,30,40,50,60,80,150,200,300,500};
+  unsigned genEn[]={5,10,15,20,25,30,40,50,60,80,100,200,300,500};//150,200,300,500};
+  //unsigned genEn[]={10,15,18,20,25,30,35,40,45,50,60,80};
   //60,80};//,100,200,300,
   //500};//,1000,2000};
   //unsigned genEn[]={10,20,30,40,60,80};
@@ -118,8 +128,8 @@ int plotE(){//main
   //unsigned genEn[]={10,40};
   const unsigned nGenEn=sizeof(genEn)/sizeof(unsigned);
   unsigned rebin[20] = {4,4,4,6,6,
-			6,6,8,8,20,
-			20,100,100,100,100,
+			6,6,8,8,10,
+			10,10,100,100,100,
 			6,6,6,6,6};
   //unsigned rebin[6] = {12,10,6,6,6,6};
 
@@ -131,21 +141,26 @@ int plotE(){//main
     mycL = new TCanvas("mycL","mycL",1500,1000);
   }
   TCanvas *mycE = new TCanvas("mycE","mycE",1500,1000);
+  TCanvas *mycErec = new TCanvas("mycErec","mycErec",1500,1000);
   TCanvas *mycPU = 0;
   if (isPU) mycPU = new TCanvas("mycPU","mycPU",1500,1000);
 
-  if (nGenEn>12)
-    mycE->Divide(5,3);
+  unsigned nx=0,ny=0;
+
+  if (nGenEn>12) {nx=5;ny=3;}
   else if (nGenEn > 10)
-    mycE->Divide(4,3);
+    {nx=4;ny=3;}
   else if (nGenEn > 6)
-    mycE->Divide(5,2);
+    {nx=5;ny=2;}
   else if (nGenEn > 4)
-    mycE->Divide(3,2);
+    {nx=3;ny=2;}
   else if (nGenEn > 2)
-    mycE->Divide(2,2);
+    {nx=2;ny=2;}
   else 
-    mycE->Divide(nGenEn,1);
+    {nx=nGenEn;ny=1;}
+  
+  mycE->Divide(nx,ny);
+  mycErec->Divide(nx,ny);
 
   const unsigned nCanvas = 4;  
   TCanvas *myc[nCanvas];
@@ -167,16 +182,15 @@ int plotE(){//main
       
       if (scenario[iS].find("PU") != scenario[iS].npos) isPU = true;
       
-      TString plotDir = "../PLOTS/version"+version[iV]+"/"+scenario[iS]+"/";
+      TString plotDir = "../PLOTS/gitV00-01-01/version"+version[iV]+"/"+scenario[iS]+"/";
       //plotDir += "noWeights/";
-      //TString plotDir = "../PLOTS/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
-      //TString plotDir = "../PLOTS/version_"+version[iV]+"/";
+      //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/scenario_"+scenario[iS]+"/";
+      //TString plotDir = "../PLOTS/gitV00-01-00/version_"+version[iV]+"/";
       
       for (unsigned iSm(0); iSm<nSmear; ++iSm){//loop on smear
 	unsigned smearOption = iSm;
 	
-	
-
+       
 	TH1F *p_Efrac[nGenEn][nLayers];
 	TH1F *p_Etotal[nGenEn];
 	TH1F *p_Ereco[nGenEn];
@@ -223,7 +237,7 @@ int plotE(){//main
 	    for (unsigned iL(0); iL<nLayers; ++iL){
 	      //std::cout << " -- Processing layer " << iL << std::endl;
 	      lName.str("");
-	      lName << "p_EfracReco_" << iL;
+	      lName << "p_EfracSim_" << iL;
 	      p_Efrac[iE][iL] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	      if (!p_Efrac[iE][iL]) {
 		std::cout << " -- ERROR, pointer for histogram Efrac is null for energy " << genEn[iE] << " layer: " << iL << ". Exiting..." << std::endl;
@@ -273,25 +287,28 @@ int plotE(){//main
 		    << " overflows " << p_Etotal[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
 		    << std::endl;
 
-	  p_Etotal[iE]->Rebin(rebin[iE]);
-	  //p_Etotal[iE]->Rebin(4);
+	  //p_Etotal[iE]->Rebin(rebin[iE]);
+	  p_Etotal[iE]->Rebin(genEn[iE]<30?rebinSim/2:genEn[iE]<300?rebinSim:4*rebinSim);
 
 	  lName.str("");
-	  lName << "p_Ereco_" << genEn[iE] << "_smear" << smearOption;
+	  lName << "p_Ereco" << pDetector;
 	  p_Ereco[iE] = (TH1F*)gDirectory->Get(lName.str().c_str());
 	  if (!p_Ereco[iE]){
 	    std::cout << " -- ERROR, pointer for histogram Ereco is null. Running on G4 file before digitizer." << std::endl;
 	    isG4File = true;
 	  }
 	  else {
-	    std::cout << " --- Reco E = entries " << p_Ereco[iE]->GetEntries() 
-		      << " mean " << p_Ereco[iE]->GetMean() 
-		      << " rms " << p_Ereco[iE]->GetRMS() 
-		      << " overflows " << p_Ereco[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
-		      << std::endl;
-
-	    p_Ereco[iE]->Rebin(rebin[iE]);
-	    //p_Ereco[iE]->Rebin(rebin);
+	    if (doReco){
+	      std::cout << " --- Reco E = entries " << p_Ereco[iE]->GetEntries() 
+			<< " mean " << p_Ereco[iE]->GetMean() 
+			<< " rms " << p_Ereco[iE]->GetRMS() 
+			<< " overflows " << p_Ereco[iE]->GetBinContent(p_Etotal[iE]->GetNbinsX()+1)
+			<< std::endl;
+	      
+	      //p_Ereco[iE]->Rebin(rebin[iE]);
+	      p_Ereco[iE]->Rebin(genEn[iE]<50?rebinReco:2*rebinReco);
+	    }
+	    else isG4File = true;
 	  }
 
 	}//loop on energies
@@ -378,6 +395,7 @@ int plotE(){//main
 	calibReco->SetLineColor(6);
 	TGraphErrors *resoReco = (TGraphErrors *) calibReco->Clone("resoReco");
 	TGraphErrors *calibRecoFit = (TGraphErrors *) calibReco->Clone("calibRecoFit");
+	TGraphErrors *deltaRecoFit = (TGraphErrors *) calibReco->Clone("deltaRecoFit");
 	TGraphErrors *resoRecoFit = (TGraphErrors *) calibReco->Clone("resoRecoFit");
   
 	//simhits
@@ -387,16 +405,10 @@ int plotE(){//main
 	  mycE->cd(iE+1);
 	  gStyle->SetOptFit(0);
 	  p_Etotal[iE]->GetXaxis()->SetRangeUser(p_Etotal[iE]->GetMean()-10*p_Etotal[iE]->GetRMS(),p_Etotal[iE]->GetMean()+10*p_Etotal[iE]->GetRMS());
-	  p_Etotal[iE]->Draw();
-	  if (pDetector == "HCAL" || pDetector == "Total" || pDetector == "SiSci") 
-	    p_Etotal[iE]->Fit("gaus","LR+","",
-			      p_Etotal[iE]->GetMean()-2*p_Etotal[iE]->GetRMS(),
-			      p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
-
-	  else p_Etotal[iE]->Fit("gaus","LR+","",
-				 p_Etotal[iE]->GetMean()-2*p_Etotal[iE]->GetRMS(),
-				 p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
-
+	  p_Etotal[iE]->Draw("PE");
+	  p_Etotal[iE]->Fit("gaus","LR+","same",
+			    p_Etotal[iE]->GetMean()-2*p_Etotal[iE]->GetRMS(),
+			    p_Etotal[iE]->GetMean()+2*p_Etotal[iE]->GetRMS());
 
 	  TF1 *fitResult = p_Etotal[iE]->GetFunction("gaus");
 	  TLatex lat;
@@ -421,16 +433,17 @@ int plotE(){//main
 
 
 	  Int_t np=calib->GetN();
-	  calib->SetPoint(np,genEn[iE],p_Etotal[iE]->GetMean());
-	  calib->SetPointError(np,0.0,p_Etotal[iE]->GetMeanError());
-	  reso->SetPoint(np,1/sqrt(genEn[iE]),p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
+	  calib->SetPoint(np,genEn[iE],p_Etotal[iE]->GetMean()/G4MIPtoGeV);
+	  calib->SetPointError(np,0.0,p_Etotal[iE]->GetMeanError()/G4MIPtoGeV);
+	  reso->SetPoint(np,doVsE?genEn[iE] : 1/sqrt(genEn[iE]),p_Etotal[iE]->GetRMS()/p_Etotal[iE]->GetMean());
 	  reso->SetPointError(np,0,p_Etotal[iE]->GetRMSError()/p_Etotal[iE]->GetMean());
-	  calibFit->SetPoint(np,genEn[iE],fitResult->GetParameter(1));
-	  calibFit->SetPointError(np,0.0,fitResult->GetParError(1));
+	  calibFit->SetPoint(np,genEn[iE],fitResult->GetParameter(1)/G4MIPtoGeV);
+	  calibFit->SetPointError(np,0.0,fitResult->GetParError(1)/G4MIPtoGeV);
 	  deltaFit->SetPoint(np,genEn[iE],( ((fitResult->GetParameter(1)-offset)/MIPtoGeV)-genEn[iE])/genEn[iE]);
 	  deltaFit->SetPointError(np,0.0,fitResult->GetParError(1)/MIPtoGeV*1./genEn[iE]);
-	  resoFit->SetPoint(np,1/sqrt(genEn[iE]),fitResult->GetParameter(2)/fitResult->GetParameter(1));
-	  resoFit->SetPointError(np,0,fitResult->GetParError(2)/fitResult->GetParameter(1));
+	  resoFit->SetPoint(np,doVsE?genEn[iE] :1/sqrt(genEn[iE]),fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	  double errFit = fitResult->GetParameter(2)/fitResult->GetParameter(1)*sqrt(pow(fitResult->GetParError(2)/fitResult->GetParameter(2),2)+pow(fitResult->GetParError(1)/fitResult->GetParameter(1),2));
+	  resoFit->SetPointError(np,0,errFit);
 
 	}//loop on energies
 
@@ -449,41 +462,56 @@ int plotE(){//main
 	  for (unsigned iE(0); iE<nGenEn; ++iE){
 	    //plot reco E
 	    std::cout << "- Processing energy : " << genEn[iE] << std::endl;
-	    mycE->cd(iE+1);
+	    mycErec->cd(iE+1);
 	    gStyle->SetOptFit(0);
 	    //p_Ereco[iE]->GetXaxis()->SetRangeUser(p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMean()+5*p_Ereco[iE]->GetRMS());
-	    p_Ereco[iE]->Draw();
-	    p_Ereco[iE]->Fit("gaus");
+	    p_Ereco[iE]->GetXaxis()->SetRangeUser(p_Ereco[iE]->GetMean()-10*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMean()+10*p_Ereco[iE]->GetRMS());
+	    p_Ereco[iE]->Draw("PE");
+	    p_Ereco[iE]->Fit("gaus","LR+","same",
+			     p_Ereco[iE]->GetMean()-2*p_Ereco[iE]->GetRMS(),
+			     p_Ereco[iE]->GetMean()+2*p_Ereco[iE]->GetRMS());
+	    
+	    
 	    TF1 *fitResult = p_Ereco[iE]->GetFunction("gaus");
 	    TLatex lat;
+	    double latx = std::max(0.,p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS());
+	    double laty = p_Ereco[iE]->GetMaximum();
 	    char buf[500];
-	    sprintf(buf,"<E> = %3.1f MIPs",p_Ereco[iE]->GetMean());
-	    lat.DrawLatex(p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMaximum()*0.9,buf);
-	    sprintf(buf,"RMS = %3.1f MIPs",p_Ereco[iE]->GetRMS());
-	    lat.DrawLatex(p_Ereco[iE]->GetMean()-5*p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMaximum()*0.8,buf);
-	    sprintf(buf,"<Efit> = %3.1f MIPs",fitResult->GetParameter(1));
-	    lat.DrawLatex(p_Ereco[iE]->GetMean()+p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMaximum()*0.9,buf);
-	    sprintf(buf,"RMSfit = %3.1f MIPs",fitResult->GetParameter(2));
-	    lat.DrawLatex(p_Ereco[iE]->GetMean()+p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetMaximum()*0.8,buf);
-      
+	    sprintf(buf,"<E> = %3.3f %s",p_Ereco[iE]->GetMean(),doMIPconv?"MIP":unitStr);
+	    lat.DrawLatex(latx,laty*0.9,buf);
+	    sprintf(buf,"RMS = %3.3f #pm %3.1f %s",p_Ereco[iE]->GetRMS(),p_Ereco[iE]->GetRMSError(),doMIPconv?"MIP":unitStr);
+	    lat.DrawLatex(latx,laty*0.8,buf);
+	    sprintf(buf,"RMS/mean = %3.3f",p_Ereco[iE]->GetRMS()/p_Ereco[iE]->GetMean());
+	    lat.DrawLatex(latx,laty*0.7,buf);
+	    sprintf(buf,"<Efit> = %3.3f +/- %3.3f %s",fitResult->GetParameter(1),fitResult->GetParError(1),doMIPconv?"MIP":unitStr);
+	    lat.DrawLatex(latx,laty*0.6,buf);
+	    sprintf(buf,"RMSfit = %3.3f +/- %3.3f %s",fitResult->GetParameter(2),fitResult->GetParError(2),doMIPconv?"MIP":unitStr);
+	    lat.DrawLatex(latx,laty*0.5,buf);
+	    sprintf(buf,"RMS/meanfit = %3.3f",fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	    lat.DrawLatex(latx,laty*0.4,buf);
+	    
+	    sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitResult->GetChisquare(),fitResult->GetNDF(),fitResult->GetChisquare()/fitResult->GetNDF());
+	    lat.DrawLatex(latx,laty*0.3,buf);
       
 	    Int_t np=calibReco->GetN();
 	    calibReco->SetPoint(np,genEn[iE],p_Ereco[iE]->GetMean());
 	    calibReco->SetPointError(np,0.0,p_Ereco[iE]->GetMeanError());
-	    resoReco->SetPoint(np,1/sqrt(genEn[iE]),p_Ereco[iE]->GetRMS()/p_Ereco[iE]->GetMean());
+	    resoReco->SetPoint(np,doVsE?genEn[iE] :1/sqrt(genEn[iE]),p_Ereco[iE]->GetRMS()/p_Ereco[iE]->GetMean());
 	    resoReco->SetPointError(np,0,p_Ereco[iE]->GetRMSError()/p_Ereco[iE]->GetMean());
 	    calibRecoFit->SetPoint(np,genEn[iE],fitResult->GetParameter(1));
 	    calibRecoFit->SetPointError(np,0.0,fitResult->GetParError(1));
-	    resoRecoFit->SetPoint(np,1/sqrt(genEn[iE]),fitResult->GetParameter(2)/fitResult->GetParameter(1));
+	    deltaRecoFit->SetPoint(np,genEn[iE],( ((fitResult->GetParameter(1)-offset)/MIPtoGeV)-genEn[iE])/genEn[iE]);
+	    deltaRecoFit->SetPointError(np,0.0,fitResult->GetParError(1)/MIPtoGeV*1./genEn[iE]);
+	    resoRecoFit->SetPoint(np,doVsE?genEn[iE] :1/sqrt(genEn[iE]),fitResult->GetParameter(2)/fitResult->GetParameter(1));
 	    resoRecoFit->SetPointError(np,0,fitResult->GetParError(2)/fitResult->GetParameter(1));
       
 	  }//loop on energies
 
 	  saveName.str("");
 	  saveName << plotDir << "/DigiEreco_smear" << smearOption << "_" << pDetector;
-	  mycE->Update();
-	  mycE->Print((saveName.str()+".png").c_str());
-	  mycE->Print((saveName.str()+".pdf").c_str());
+	  mycErec->Update();
+	  mycErec->Print((saveName.str()+".png").c_str());
+	  mycErec->Print((saveName.str()+".pdf").c_str());
 	}
 
 	//draw calib
@@ -494,10 +522,13 @@ int plotE(){//main
 
 	for(unsigned i=0; i<imax ; i++)
 	  {
-	    if (i==1) upper->cd();
+	    if (i==1 || i==5) upper->cd();
 	    else myc[i%4]->cd();
 	    type[i] = i==0 ? "calib" : i==1 ? "calibFit" : i==2 ? "reso" : "resoFit";
-	    if (!isG4File && i>3) type[i] = i==4 ? "calibReco" : i==5 ? "calibRecoFit" : i==6 ? "resoReco" : "resoRecoFit";
+	    if (!isG4File && i>3) {
+	      type[i] = i==4 ? "calibReco" : i==5 ? "calibRecoFit" : i==6 ? "resoReco" : "resoRecoFit";
+	      addNoiseTerm = true;
+	    }
 
 	    if (nSmear > 1){
 	      type[i] += "_smear";
@@ -519,8 +550,9 @@ int plotE(){//main
 	    if (!isG4File && i>3) gr = i==4 ? calibReco : i==5 ? calibRecoFit : i==6 ? resoReco : resoRecoFit;
 	    if (i==3 && nSmear>1) gr->SetTitle(smearFact[iSm]);
 	    else gr->SetTitle("");
+	    if (i%4>1) gr->SetMaximum(std::max(resoFit->GetMaximum(),resoRecoFit->GetMaximum()));
 	    gr->Draw(i<4? "ap" : "p");
-	    gr->GetYaxis()->SetRangeUser(0,gr->GetYaxis()->GetXmax());
+	    //gr->GetYaxis()->SetRangeUser(0,i%4<2?100 : 0.2);
 	    
 	    if(i<2|| (!isG4File && (i==4 || i==5))) { 
 	      if (i!=1) gr->GetXaxis()->SetTitle("Beam energy [GeV]");
@@ -529,7 +561,7 @@ int plotE(){//main
 	      else gr->GetYaxis()->SetTitle("Average energy deposited ["+TString(unitStr)+"]"); 
 	    }
 	    else { 
-	      gr->GetXaxis()->SetTitle("1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
+	      gr->GetXaxis()->SetTitle(doVsE?"Beam energy [GeV]" :"1/#sqrt{Beam energy} [1/#sqrt{GeV}]"); 
 	      gr->GetYaxis()->SetTitle("Relative energy resolution");     
 	    }
 	    char buf[500];
@@ -544,22 +576,22 @@ int plotE(){//main
 	      sprintf(buf,"<E> #propto a + b #times E ");
 	      if (i<2) lat.DrawLatex(genEn[0],gr->GetYaxis()->GetXmax()*0.9,buf);
 	      sprintf(buf,"a = %3.3f #pm %3.3f ",fitFunc->GetParameter(0),fitFunc->GetParError(0));
-	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.25),buf);
 	      sprintf(buf,"b = %3.3f #pm %3.3f",fitFunc->GetParameter(1),fitFunc->GetParError(1));
-	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.25),buf);
 	      sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc->GetChisquare(),fitFunc->GetNDF(),fitFunc->GetChisquare()/fitFunc->GetNDF());
-	      lat.DrawLatex(genEn[0]+i/2*150,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
+	      lat.DrawLatex(genEn[0]+i/2*15,gr->GetYaxis()->GetXmax()*(0.6-i/2*0.25),buf);
 
 	      //draw deltaE/E vs E
-	      if (i==1){
+	      if (i==1 || i==5){
 		lower->cd();
 		gPad->SetLogx(0);
 		gPad->SetGridx(1);
 		gPad->SetGridy(1);
-		TGraphErrors * grDelta = deltaFit;
+		TGraphErrors * grDelta = i==1?deltaFit : deltaRecoFit;
 		grDelta->SetTitle("");
-		grDelta->SetMinimum(-0.1);
-		grDelta->SetMaximum(0.1);
+		grDelta->SetMinimum(-0.03);
+		grDelta->SetMaximum(0.03);
 		grDelta->GetXaxis()->SetLabelSize(0.15);
 		grDelta->GetXaxis()->SetTitleSize(0.15);
 		grDelta->GetYaxis()->SetLabelSize(0.12);
@@ -567,7 +599,7 @@ int plotE(){//main
 		grDelta->GetXaxis()->SetTitleOffset(0.5);
 		grDelta->GetYaxis()->SetTitleOffset(0.3);
 
-		grDelta->Draw("ap");
+		grDelta->Draw(i==1? "ap" : "p");
 		//grDelta->GetYaxis()->SetRangeUser(0,grDelta->GetYaxis()->GetXmax());
 		grDelta->GetXaxis()->SetTitle("Beam energy [GeV]");
 		grDelta->GetYaxis()->SetTitle("(#Delta E)/E");
@@ -578,30 +610,32 @@ int plotE(){//main
 	      {
 		//TF1 *fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 		TF1 *fitFunc2;
-		fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
-		if (addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		if (doVsE){
+		  fitFunc2 =new TF1("reso","sqrt([0]/x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		  if (i>3 && addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]/x+[1]+[2]/(x*x))",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		}
+		else {
+		  fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		  if (i>3 && addNoiseTerm) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1]+[2]*x*x*x*x)",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+		}
 		//if (i<4) fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
 		//else fitFunc2 =new TF1("reso","sqrt([0]*x*x+[1])",gr->GetXaxis()->GetXmin(),0.2);//gr->GetXaxis()->GetXmax());
 
+		TF1* fitref = (TF1*)fitFunc2->Clone();
+		fitref->SetLineColor(7);
+		fitref->SetLineWidth(2);
+		fitref->SetParameter(0,0.518*0.518);
+		fitref->SetParameter(1,0.04*0.04);
+
 		fitFunc2->SetParameter(0,0.2);
 		fitFunc2->SetParLimits(0,0,1);
-		fitFunc2->SetParameter(1,0);
+		fitFunc2->SetParameter(1,0.01);
 		fitFunc2->SetParLimits(1,0,1);
 		if (addNoiseTerm) {
+		  fitref->SetParameter(2,0.18*0.18);
 		  fitFunc2->SetParameter(2,0.18*0.18);
-		  fitFunc2->SetParLimits(2,0,0);
-		  fitFunc2->FixParameter(2,0.18*0.18);
-		}
-		if (pDetector == "HCAL" || pDetector == "Total" || pDetector == "SiSci") {
-		  fitFunc2->SetParameter(0,0.5);
-		  fitFunc2->SetParLimits(0,0,2);
-		  fitFunc2->SetParameter(1,0);
-		  fitFunc2->SetParLimits(1,0,1);
-		  if (addNoiseTerm) {
-		    fitFunc2->SetParameter(2,0.18*0.18);
-		    fitFunc2->SetParLimits(2,0,0);
-		    fitFunc2->FixParameter(2,0.18*0.18);
-		  }
+		  fitFunc2->SetParLimits(2,0,2);
+		  //fitFunc2->FixParameter(2,0.18*0.18);
 		}
 		if (i<4) {
 		  //fitFunc2->SetParameter(2,0.);
@@ -612,6 +646,7 @@ int plotE(){//main
 		  //fitFunc2->SetLineColor(6);
 		  //fitFunc2->SetParameter(2,0.);
 		  //fitFunc2->SetParLimits(2,0,0);
+		  //fitref->Draw("same");
 		}
 		gr->Fit(fitFunc2,"RME");
 		sigmaStoch[iSm][iS][i] = sqrt(fitFunc2->GetParameter(0));
@@ -625,26 +660,34 @@ int plotE(){//main
 		TLatex lat;
 		if (i>3) lat.SetTextColor(6);
 		else lat.SetTextColor(1);
-		if (addNoiseTerm) sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c #oplus #frac{n}{E}");
+		if (addNoiseTerm) sprintf(buf,"#oplus #frac{n}{E}");
 		else sprintf(buf,"#frac{#sigma}{E} #propto #frac{s}{#sqrt{E}} #oplus c");
-		double Emin = 1/sqrt(genEn[nGenEn-1]);
-		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*0.9,buf);
+		double Emin = doVsE?40 : 1/sqrt(genEn[nGenEn-1]);
+		if (i<4) lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax(),buf);
+		else lat.DrawLatex(doVsE?Emin+80:Emin+0.1,gr->GetYaxis()->GetXmax(),buf);
 		sprintf(buf,"s=%3.3f #pm %3.3f",sigmaStoch[iSm][iS][i],sigmaStochErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/2*0.1-i/4*0.3),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.9-i/6*0.22),buf);
 		sprintf(buf,"c=%3.3f #pm %3.3f",sigmaConst[iSm][iS][i],sigmaConstErr[iSm][iS][i]);
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/2*0.1-i/4*0.3),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.85-i/6*0.22),buf);
 		sprintf(buf,"chi2/NDF = %3.3f/%d = %3.3f",fitFunc2->GetChisquare(),fitFunc2->GetNDF(),fitFunc2->GetChisquare()/fitFunc2->GetNDF());
-		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.4-i/2*0.1-i/4*0.3),buf);
+		lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.75-i/6*0.22),buf);
 		//if (i>3){
 		if (addNoiseTerm) {
 		  sprintf(buf,"n=%3.3f #pm %3.3f",sigmaNoise[iSm][iS][i],sigmaNoiseErr[iSm][iS][i]);
-		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.7-i/2*0.1-i/4*0.3),buf);
+		  lat.DrawLatex(Emin,gr->GetYaxis()->GetXmax()*(0.8-i/6*0.22),buf);
 		}
+		lat.SetTextColor(7);
+		sprintf(buf,"CALICE s=%3.3f, c=%3.3f",sqrt(fitref->GetParameter(0)),sqrt(fitref->GetParameter(1)));
+		//if (i<4) lat.DrawLatex(8,gr->GetYaxis()->GetXmin()*1.1,buf);
 	      }
 	    myc[i%4]->Update();
 	    if (doShower) {
 	      myc[i%4]->Print(plotDir+"/"+type[i]+"_Shower.pdf");
 	      myc[i%4]->Print(plotDir+"/"+type[i]+"_Shower.png");
+	    }
+	    else if (i%4>1 && doVsE){
+	      myc[i%4]->Print(plotDir+"/"+type[i]+"_vsE.pdf");
+	      myc[i%4]->Print(plotDir+"/"+type[i]+"_vsE.png");
 	    }
 	    else {
 	      myc[i%4]->Print(plotDir+"/"+type[i]+".pdf");
@@ -758,7 +801,7 @@ int plotE(){//main
     
     
     saveName.str("");
-    saveName << "../PLOTS/version" << version[0] << "/" << scenario[0] << "/Intercalibration";
+    saveName << "../PLOTS/gitV00-01-00/version" << version[0] << "/" << scenario[0] << "/Intercalibration";
     mycF->Update();
     mycF->Print((saveName.str()+".png").c_str());
     mycF->Print((saveName.str()+".pdf").c_str());

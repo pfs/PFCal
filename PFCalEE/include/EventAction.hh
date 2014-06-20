@@ -42,19 +42,18 @@ public:
   void Add( std::vector<SamplingSection> *newDetector ) { detector_=newDetector; }
   //Float_t GetCellSize() { return cellSize_; }
 
+  std::string GetFirstVolumeName() const;
+
 private:
   RunAction*  runAct;
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
   TFile *outF_;
-  //TNtuple *ntuple_;
   TTree *tree_;
   HGCSSEvent event_;
   HGCSSSamplingSectionVec ssvec_;
-  //Float_t event_[18];
   HGCSSSimHitVec hitvec_;
   HGCSSGenParticleVec genvec_;
-  //  Float_t event_[15], dendydz_[81], cellSize_;
   EventActionMessenger*  eventMessenger;
 
 };

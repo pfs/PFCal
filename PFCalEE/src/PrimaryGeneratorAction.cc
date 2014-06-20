@@ -110,7 +110,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   G4double z0 = -0.5*(Detector->GetWorldSizeZ());
   G4double x0 = 0.*cm, y0 = 0.*cm;
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
-  G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
+  //G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
   if(currentGenerator){
     currentGenerator->GeneratePrimaryVertex(anEvent);
   }

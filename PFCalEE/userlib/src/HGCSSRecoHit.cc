@@ -4,7 +4,7 @@
 #include <cmath>
 #include <stdlib.h>
 
-HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity, const float cellSize){
+HGCSSRecoHit::HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity){
   energy_ = aSimHit.energy();
   adcCounts_ = 0;
   zpos_ = aSimHit.get_z();

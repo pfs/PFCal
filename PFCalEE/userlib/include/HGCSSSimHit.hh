@@ -5,6 +5,7 @@
 #include <vector>
 #include "Rtypes.h"
 #include <sstream>
+#include <iostream>
 #include <map>
 
 #include "G4SiHit.hh"
@@ -56,12 +57,14 @@ public:
     return layer_%3;
   };
 
-  inline void layer(const unsigned & layer) {
-    layer_ = layer;
-  };
-
+  //re-encode local layer into det layer + si layer if several sensitive layers (up to 3...)
   inline void setLayer(const unsigned & layer, const unsigned & silayer){
+    if (silayer>2) {
+      std::cerr << " ERROR! Trying to add silayer " << silayer << ", should be less than 3..." << std::endl;
+      exit(1);
+    }
     layer_ = 3*layer+silayer;
+    //if (silayer>0) std::cout << layer_ << " " << layer << " " << silayer << std::endl;
   };
 
   inline unsigned cellid() const {
@@ -194,11 +197,11 @@ public:
 
   inline int mainParentTrackID() const{
     return trackIDMainParent_;
-  }
+  };
 
   inline double mainParentEfrac() const {
     return energyMainParent_/energy_;
-  }
+  };
 
   void Print(std::ostream & aOs) const ;
 

@@ -60,7 +60,7 @@ public:
 		     bool concept=true,
 		     bool isCaliceHcal=false);
 
-  const HGCSSSubDetector & subDetector(const unsigned aLayer);
+  const HGCSSSubDetector & subDetectorByLayer(const unsigned aLayer);
 
   unsigned getSection(const unsigned aLayer) const;
   inline unsigned section(const DetectorEnum adet){
@@ -81,8 +81,8 @@ public:
     return subdets_[enumMap_[adet]].nLayers();
   };
 
-  const HGCSSSubDetector & subDetector(DetectorEnum adet);
-  inline const HGCSSSubDetector & subDetector(const unsigned aSection) const{
+  const HGCSSSubDetector & subDetectorByEnum(DetectorEnum adet);
+  inline const HGCSSSubDetector & subDetectorBySection(const unsigned aSection) const{
     return subdets_[aSection];
   };
 

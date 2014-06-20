@@ -39,7 +39,7 @@ int main(int argc,char** argv)
 
   // Set mandatory initialization classes
   //int version=DetectorConstruction::v_HGCALEE_concept;
-  int version=23;//DetectorConstruction::v_HGCAL;
+  int version=12;//DetectorConstruction::v_HGCALEE_v5;
   //int model=DetectorConstruction::m_FULLSECTION;
   int model=DetectorConstruction::m_SIMPLE_20;
 

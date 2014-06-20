@@ -11,9 +11,8 @@ class HGCSSEvent{
 
 public:
   HGCSSEvent():
-    event_(0),
-    cellSize_(0)
- {
+    event_(0)
+  {
     
   };
 
@@ -23,22 +22,13 @@ public:
     return event_;
   };
 
-  inline double cellSize() const{
-    return cellSize_;
-  };
-
   inline void eventNumber(const unsigned aNum){
     event_ = aNum;
-  };
-
-  inline void cellSize(const double & aVal){
-    cellSize_ = aVal;
   };
 
 private:
 
   unsigned event_;
-  double cellSize_;
 
   ClassDef(HGCSSEvent,1);
 

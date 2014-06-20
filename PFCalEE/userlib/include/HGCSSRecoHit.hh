@@ -24,7 +24,7 @@ public:
     noiseFrac_(0)
   {};
 
-  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1, const float cellSize=2.5);
+  HGCSSRecoHit(const HGCSSSimHit & aSimHit, const unsigned granularity=1);
 
   ~HGCSSRecoHit(){};
 
@@ -124,7 +124,7 @@ public:
   //   return (cellid_ & 0x03FFC000) >> 14;
   // };
 
-  inline double get_x(const float cellSize=2.5) const{
+  inline double get_x() const{
     return xpos_;
     //float sign = get_x_side() ? 1. : -1. ;
     //if (sign > 0)
@@ -132,7 +132,7 @@ public:
     //else return get_x_cell()*sign*cellSize*getGranularity()-cellSize*getGranularity()/2;
   };
 
-  inline double get_y(const float cellSize=2.5) const{
+  inline double get_y() const{
     return ypos_;
     //float sign = get_y_side() ? 1. : -1. ;
     //if (sign > 0)

@@ -64,8 +64,8 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   if (isCaliceHcal) {
     FHCAL.mipWeight = 1./0.807;
     FHCAL.absWeight = 1.;
-    FHCAL.gevWeight = 1./41.69;//MIPtoGeV
-    FHCAL.gevOffset = -4.3/41.69;//offset in GeV
+    FHCAL.gevWeight = 1./39.32;//MIPtoGeV
+    FHCAL.gevOffset = -1.8/39.32;//offset in GeV
     FHCAL.isScint = true;
     FHCAL.isSi = false;
   }
@@ -86,7 +86,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
     BHCAL.name = "BHCAL1";
     BHCAL.mipWeight = 1./0.807;
     BHCAL.absWeight = 1.;
-    BHCAL.gevWeight = 1./41.69;//MIPtoGeV
+    BHCAL.gevWeight = FHCAL.gevWeight;//MIPtoGeV
     BHCAL.gevOffset = 0.0;
   }
   if (BHCAL.nLayers()>0) theDetector().addSubdetector(BHCAL);
@@ -98,7 +98,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
   BHCAL2.layerIdMax = indices[6];
   BHCAL2.mipWeight = 1./0.807;
   BHCAL2.absWeight = 104./21.;
-  BHCAL2.gevWeight = 1./41.69;//MIPtoGeV
+  BHCAL2.gevWeight = FHCAL.gevWeight;//MIPtoGeV
   BHCAL2.gevOffset = 0.0;
   BHCAL2.isScint = true;
   
@@ -109,7 +109,7 @@ void HGCSSDetector::buildDetector(const unsigned indices[],
 }
 
 
-const HGCSSSubDetector & HGCSSDetector::subDetector(const unsigned aLayer){
+const HGCSSSubDetector & HGCSSDetector::subDetectorByLayer(const unsigned aLayer){
   unsigned section = getSection(aLayer);
   return subdets_[section];
 }
@@ -145,7 +145,7 @@ void HGCSSDetector::finishInitialisation(){
   printDetector(std::cout);
 }
 
-const HGCSSSubDetector & HGCSSDetector::subDetector(DetectorEnum adet){
+const HGCSSSubDetector & HGCSSDetector::subDetectorByEnum(DetectorEnum adet){
   if (enumMap_.find(adet) == enumMap_.end()){
     std::cerr << " -- Error ! Trying to access subdetector enum not present in this detector: "
 	      << adet 
