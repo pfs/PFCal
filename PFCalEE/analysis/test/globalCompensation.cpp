@@ -72,14 +72,14 @@ int main(int argc, char** argv){//main
 
   const unsigned nLimits = 10;//5;
   const double pElim[nLimits] = {5,6,7,8,9,10,11,12,13,14};
-  const unsigned idxRef = 5;
+  const unsigned idxRef = 0;
 
-  double FHcalEMCalib = 37.8;//39.81;//38;
-  double FHcalEMOffset = -14;//1.9;//-15;
+  double FHcalEMCalib = 40.4;//39.81;//38;
+  double FHcalEMOffset = -3.9;//1.9;//-15;
   double BHcalEMCalib = FHcalEMCalib;//39.81;//38;
   double BHcalEMOffset = 0;//1.9;//-15;
-  double HcalPionCalib = 0.9;
-  double HcalPionOffset = 1.3;//-0.81;
+  double HcalPionCalib = 1/1.19;
+  double HcalPionOffset = -0.81;
   double BHcalSlope = 1;
 
   //////////////////////////////////////////////////////////
@@ -247,8 +247,8 @@ int main(int argc, char** argv){//main
     FHcalEMOffset = -3.9;
     BHcalEMCalib = FHcalEMCalib;
     BHcalEMOffset = 0;//1.9;//-15;
-    HcalPionCalib = 0.87;
-    HcalPionOffset = -1.4;//-0.81;
+    HcalPionCalib = 0.84;
+    HcalPionOffset = 0;//-1.4;//-0.81;
     BHcalSlope = 1;
   }
 
