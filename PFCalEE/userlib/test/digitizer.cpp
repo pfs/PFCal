@@ -6,6 +6,7 @@
 
 #include "TFile.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TNtuple.h"
 #include "TH2D.h"
 #include "TH1F.h"
@@ -68,6 +69,7 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   //parameters
   /////////////////////////////////////////////////////////////
+
   const unsigned nReqA = 7;
   const unsigned nPar = static_cast<unsigned>(argc);
   if (nPar < nReqA) {
@@ -95,6 +97,9 @@ int main(int argc, char** argv){//main
   std::string granulStr = argv[4];
   std::string noiseStr = argv[5];
   std::string threshStr = argv[6];
+  const int nPU = atoi(argv[7]);
+  std::string puPath = argv[8];
+
 
   std::cout << " ----------------------------------------" << std::endl
 	    << " -- Input parameters: " << std::endl
@@ -107,6 +112,7 @@ int main(int argc, char** argv){//main
 	    << " -- Granularities: " << granulStr << std::endl
 	    << " -- noise: " << noiseStr << std::endl
 	    << " -- thresholds: " << threshStr << std::endl
+            << " -- number of PU:" << nPU << std::endl
     ;
 	    
   //std::string pModel = "model2";
@@ -172,7 +178,38 @@ int main(int argc, char** argv){//main
     return 1;
   }
 
+  /////////////////////////////////////////////////////////////
+  //  //input PU hits
+  /////////////////////////////////////////////////////////////
 
+  TChain *puTree = new TChain("HGCSSTree");
+  unsigned nPuVtx = 0;
+  unsigned nPuEvts = 0;
+  std::vector<HGCSSSimHit> * puhitvec = 0;
+  if(nPU!=0){
+     ofstream myscript;
+     myscript.open("eosls.sh");
+     myscript<<"#!/bin/bash" << std::endl;
+     myscript<<"/afs/cern.ch/project/eos/installation/0.3.15/bin/eos.select ls " << puPath << std::endl; 
+     myscript.close();
+     FILE *script = popen("bash eosls.sh", "r");
+     char eoslsName[100];
+     while(fgets(eoslsName, 100, script)) {
+        std::ostringstream puInput;
+        std::string temp = std::string(eoslsName).substr(0,strlen(eoslsName)-1);
+        if(temp.find("Digi")!=temp.npos)continue;
+        puInput << puPath << temp;
+        puTree->AddFile(puInput.str().c_str());
+        std::cout << "Adding MinBias file:" << puInput.str().c_str() << std::endl;
+     }
+     pclose(script);  
+     system("rm ./eosls.sh");
+
+    puTree->SetBranchAddress("HGCSSSimHitVec",&puhitvec);
+
+    nPuEvts = puTree->GetEntries();
+    std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
+  }
   /////////////////////////////////////////////////////////////
   //input tree
   /////////////////////////////////////////////////////////////
@@ -289,13 +326,16 @@ int main(int argc, char** argv){//main
   unsigned maxSimHits = 0;
   unsigned maxRecHits = 0;
   unsigned maxRecJets = 0;
+  outputTree->Branch("nPuVtx",&nPuVtx);
   HGCSSEvent lEvent;
   outputTree->Branch("HGCSSEvent",&lEvent);
+  if (nPU!=0) outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
   if (pSaveSims) outputTree->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&lSimHits);
   if (pSaveDigis) outputTree->Branch("HGCSSDigiHitVec","std::vector<HGCSSRecoHit>",&lDigiHits);
   outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
   if (pMakeJets) outputTree->Branch("HGCSSRecoJetVec","std::vector<HGCSSRecoJet>",&lCaloJets);
   TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-5,5);
+
 
   /////////////////////////////////////////////////////////////
   //Loop on events
@@ -358,6 +398,59 @@ int main(int argc, char** argv){//main
       }
 
     }//loop on input simhits
+
+    if(nPU!=0){
+      //get PU events
+      std::vector<unsigned> ipuevt;
+
+      //get poisson <140>
+      nPuVtx = lRndm->Poisson(nPU);
+      ipuevt.resize(nPuVtx,1);
+
+      std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << std::endl;
+      for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
+        ipuevt[iV] = lRndm->Integer(nPuEvts);
+
+        puTree->GetEntry(ipuevt[iV]);
+        //lRecoHits.reserve(lRecoHits.size()+(*puhitvec).size());
+        prevLayer = 10000;
+        type = DetectorEnum::FECAL;
+        subdetLayer=0;
+        for (unsigned iH(0); iH<(*puhitvec).size(); ++iH){//loop on hits
+          HGCSSSimHit lHit = (*puhitvec)[iH];
+
+          unsigned layer = lHit.layer();
+          if (layer != prevLayer){
+            const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+            type = subdet.type;
+            subdetLayer = layer-subdet.layerIdMin;
+            prevLayer = layer;
+            //std::cout << " - layer " << layer << " " << subdet.name << " " << subdetLayer << std::endl;
+          }
+           double energy = lHit.energy()*mycalib.MeVToMip(layer);
+           double posx = lHit.get_x(cellSize);
+           double posy = lHit.get_y(cellSize);
+           double posz = lHit.get_z();
+           double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
+           bool passTime = myDigitiser.passTimeCut(type,realtime);
+           if (!passTime) continue;
+
+           if (energy>0 &&
+               lHit.silayer() < geomConv.getNumberOfSiLayers(type)//,lHit.eta()) 
+               ){
+             if (debug > 1) std::cout << " hit " << iH
+                                      << " lay " << layer
+                                      << " x " << posx
+                                      << " y " << posy
+                                      << " z " << posz
+                                      << " t " << lHit.time() << " " << realtime
+                                      << std::endl;
+             geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+           }
+
+        }//loop on hits
+      }//loop on interactions
+    }//add PU
 
     if (debug>1) {
       std::cout << " **DEBUG** simhits = " << (*hitvec).size() << " " << lSimHits.size() << std::endl;
