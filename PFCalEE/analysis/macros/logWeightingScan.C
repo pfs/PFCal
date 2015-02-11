@@ -60,12 +60,13 @@ double zpos(const unsigned l){
 int logWeightingScan(){//main
   SetTdrStyle();
 
-  TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/";
-  std::string pteta = "eta17_et100";
+  //TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/";
+  TString plotDir = "/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE/analysis/PLOTS/gitV00-02-12/version12/gamma/200um/";
+  std::string pteta = "eta19_et60";
 
   const unsigned nPu = 1;//2;
   unsigned pu[nPu] = {0};//,140};
-  const double theta = 0.361;
+  //const double theta = 0.297;//0.361;//0.297;
 
   const unsigned nScans = 50;
   const double wStart = 1.;
@@ -88,8 +89,8 @@ int logWeightingScan(){//main
   }
 
   fout->cd();
-  TH1F *p_xt = new TH1F("p_xt",";x truth (mm)",100,-5,5); 
-  TH1F *p_yt = new TH1F("p_yt",";y truth (mm)",100,-5,5);//200,1170,1370); 
+  TH1F *p_xt = new TH1F("p_xt",";x truth (mm)",100,-10,10); 
+  TH1F *p_yt = new TH1F("p_yt",";y truth (mm)",100,-10,10);//200,1170,1370); 
 
 
   TH1F *p_posx[nPu][nLayers][nScans];
@@ -307,11 +308,12 @@ int logWeightingScan(){//main
 	    simpley = 10*(Ey[2]-Ey[0])/Etot;
 	  }
 	}
-	double xt = truthPosX[iL];
-	unsigned cellCenter = static_cast<unsigned>((truthPosY[iL]+5)/10.)*10;
-	double yt = 0;
-	//if (cellCenter>truthPosY[iL]) yt = cellCenter-truthPosY[iL];
-	yt=truthPosY[iL]-cellCenter;
+	double sign = fabs(truthPosX[iL])/truthPosX[iL];
+	unsigned cellCenter = static_cast<unsigned>((fabs(truthPosX[iL])+5)/10.)*10;
+	double xt = truthPosX[iL]-sign*cellCenter;
+	sign = fabs(truthPosY[iL])/truthPosY[iL];
+	cellCenter = static_cast<unsigned>((fabs(truthPosY[iL])+5)/10.)*10;
+	double yt=truthPosY[iL]-sign*cellCenter;
 	p_xt->Fill(xt);
 	p_yt->Fill(yt);
 	p_deltavsreco_x[ipu][iL]->Fill(xt,simplex-xt);

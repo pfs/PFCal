@@ -97,9 +97,12 @@ int plotMipHistos(){
   ///////////////////////////////////////////////////////////////////
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 10;
+  //const unsigned nNoise = 10;
+  const unsigned nNoise = 5;//10;
 
-  const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  //const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double noise[nNoise] = {0.6,0.7,0.8,0.9,1.0};
+
   const double eta[nEta] = {2.85};//1.7,2.0,2.5};
 
   const double deta = 0.05;
@@ -121,7 +124,8 @@ int plotMipHistos(){
   suffix << "_" << EthreshMax;
   suffix << "_EmaxNeighbour" << EmaxCut;
   suffix << "_trk" << 1+2*layerRange << "layers";
-  suffix << "_1x1";  
+  suffix << "_highnoise";
+  //suffix << "_1x1";  
   if (oneOnly) suffix << "_onlyOne";
 
   ///////////////////////////////////////////////////////////////////
@@ -129,7 +133,7 @@ int plotMipHistos(){
   ///////////////////////////////////////////////////////////////////
 
   std::ostringstream outFilePath;
-  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << "_0_20.root";
+  outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << ".root";
   TFile *file = TFile::Open(outFilePath.str().c_str());
   file->cd();
 
@@ -151,12 +155,12 @@ int plotMipHistos(){
   TCanvas *myc = new TCanvas("myc","myc",2000,1000);
   TCanvas *mycP = new TCanvas("mycP","mycP",1);
   TCanvas *mycS = new TCanvas("mycS","mycS",2000,1000);
-  mycS->Divide(5,2);
+  mycS->Divide(3,2);
   TCanvas *mycM = new TCanvas("mycM","mycM",2000,1000);
-  mycM->Divide(5,2);
+  mycM->Divide(3,2);
   TCanvas *mycH = new TCanvas("mycH","mycH",1500,1000);
   TCanvas *mycL = new TCanvas("mycL","mycL",2000,1000);
-  mycL->Divide(5,2);
+  mycL->Divide(3,2);
 
 
   // TCanvas *mycL[nLayers];
@@ -247,7 +251,7 @@ int plotMipHistos(){
   //return 1;
   myc->Clear();
   myc->SetLogy(0);
-  myc->Divide(5,2);
+  myc->Divide(3,2);
 
   gStyle->SetOptStat("eMRuo");
 

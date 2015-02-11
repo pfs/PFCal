@@ -205,9 +205,11 @@ int main(int argc, char** argv){//main
   const double cell_size = 5;//mm
 
   const unsigned nEta = 1;
-  const unsigned nNoise = 10;
+  //const unsigned nNoise = 10;
+  const unsigned nNoise = 5;//10;
 
-  const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  //const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
+  const double noise[nNoise] = {0.6,0.7,0.8,0.9,1.0};
   const double eta[nEta] = {2.85};//1.7,2.0,2.5};
 
   const double deta = 0.05;
@@ -255,6 +257,7 @@ int main(int argc, char** argv){//main
   suffix << "_" << EthreshMax;
   suffix << "_EmaxNeighbour" << EmaxCut;
   suffix << "_trk" << 1+2*layerRange << "layers";
+  suffix << "_highnoise";
   if (cell_size > 6) suffix << "_1x1";
   if (oneOnly) suffix << "_onlyOne";
   if (nTrees>1) suffix << "_" << start << "_" << start+nTrees;

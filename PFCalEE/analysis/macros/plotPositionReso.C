@@ -363,7 +363,7 @@ int plotPositionReso(){//main
   TGraphErrors *grResidualTanY[npt][npu];
 
   const unsigned neta = 1;//7;
-  const unsigned eta[neta] = {29};//,19,21,23,25,27,29};
+  const unsigned eta[neta] = {17};//,19,21,23,25,27,29};
   double etaval[npu][neta];
 
   
@@ -506,7 +506,7 @@ int plotPositionReso(){//main
       
     }//loop on pu
 
-    if (nPu>1){
+    if (npu>1){
       TLegend *leg1 = new TLegend(0.64,0.8,0.94,0.94);
       leg1->SetFillColor(10);
       leg1->AddEntry(grFit[ipt][0],"PU 0","P");

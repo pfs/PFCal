@@ -23,31 +23,39 @@
 
 int plotResiduals(){
 
-  const unsigned nP = 6;
+  const unsigned nP = 3;//6;
 
-  unsigned etabin = 17;
-  unsigned pt = 50;
+  unsigned etabin = 19;
+  unsigned pt = 60;
   unsigned pu = 0;
 
-  std::ostringstream plotDir;
-  plotDir << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  std::ostringstream plotDir[nP];
+  plotDir[0] << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  plotDir[1] << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
+  plotDir[2] << "../PLOTS/gitV00-02-12/version12/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
 
   std::string suffix[nP] = {
-    "_simpleweight_xy",
-    "_simpleweight",
-    "_logweight_xy",
-    "_logweight_all",
-    "_logweight_7_22",
-    "_logweight_linearFrontBack"
+    "",
+    "",
+    "_new"
+    //"_simpleweight_xy",
+    //"_simpleweight",
+    //"_logweight_xy",
+    //"_logweight_all",
+    //"_logweight_7_22",
+    //"_logweight_linearFrontBack"
   };
 
   std::string label[nP] = {
-    "simple weighting, matrix=(x+y)/2.",
-    "simple weighting, x and y sep.",
-    "log weighting, matrix=(x+y)/2.",
-    "log weighting, x and y sep.",
-    "log weighting, fit only l=7-22",
-    "log weighting l=7-22, linear front-back"
+    "log weighting, x and y sep",
+    "log weighting bug, x and y sep",
+    "log weighting 5, x and y sep"
+    //"simple weighting, matrix=(x+y)/2.",
+    //"simple weighting, x and y sep.",
+    //"log weighting, matrix=(x+y)/2.",
+    //"log weighting, x and y sep.",
+    //"log weighting, fit only l=7-22",
+    //"log weighting l=7-22, linear front-back"
   };
 
   TFile *file[nP];
@@ -72,16 +80,16 @@ int plotResiduals(){
 
   for (unsigned iP(0);iP<nP;++iP){//loop on points
     
-    file[iP] = TFile::Open((plotDir.str()+suffix[iP]+".root").c_str());
+    file[iP] = TFile::Open((plotDir[iP].str()+suffix[iP]+".root").c_str());
     if (!file[iP]) {
-      std::cout << " -- Error! Cannot open file " << plotDir.str()+suffix[iP] << std::endl;
+      std::cout << " -- Error! Cannot open file " << plotDir[iP].str()+suffix[iP] << std::endl;
       return 1;
     }
     file[iP]->cd("PositionFit");
 
-    p_impactX_residual[iP] = (TH1F*)gDirectory->Get("p_impactX_residual");
+    p_impactX_residual[iP] = (TH1F*)gDirectory->Get("p_impactX14_residual");
     p_tanAngleX_residual[iP] = (TH1F*)gDirectory->Get("p_tanAngleX_residual");
-    p_impactY_residual[iP] = (TH1F*)gDirectory->Get("p_impactY_residual");
+    p_impactY_residual[iP] = (TH1F*)gDirectory->Get("p_impactY14_residual");
     p_tanAngleY_residual[iP] = (TH1F*)gDirectory->Get("p_tanAngleY_residual");
     if (iP==5) {
       p_impactX_residual[iP] = (TH1F*)gDirectory->Get("p_impactX14_residual");
@@ -118,13 +126,13 @@ int plotResiduals(){
   }//loop on points
 
   mycPx->Update();
-  mycPx->Print((plotDir.str()+"_impactXresiduals.pdf").c_str());
+  mycPx->Print((plotDir[1].str()+"_impactXresiduals.pdf").c_str());
   mycPy->Update();
-  mycPy->Print((plotDir.str()+"_impactYresiduals.pdf").c_str());
+  mycPy->Print((plotDir[1].str()+"_impactYresiduals.pdf").c_str());
   mycAx->Update();
-  mycAx->Print((plotDir.str()+"_tanAngleXresiduals.pdf").c_str());
+  mycAx->Print((plotDir[1].str()+"_tanAngleXresiduals.pdf").c_str());
   mycAy->Update();
-  mycAy->Print((plotDir.str()+"_tanAngleYresiduals.pdf").c_str());
+  mycAy->Print((plotDir[1].str()+"_tanAngleYresiduals.pdf").c_str());
 
   return 0;
 

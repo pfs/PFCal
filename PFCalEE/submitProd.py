@@ -104,6 +104,7 @@ for et in enlist :
     if opt.eta>0 : outTag='%s_eta%3.3f'%(outTag,opt.eta) 
     if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
     scriptFile.write('mv PFcal.root HGcal_%s.root\n'%(outTag))
+    scriptFile.write('mv momentum_list_layer30.dat layer30_%s.dat\n'%(outTag))
     scriptFile.write('localdir=`pwd`\n')
     #scriptFile.write('%s/userlib/bin/digitizer 0 $localdir/HGcal_%s.root $localdir/ %s %s %s 0 | tee %s\n'%(os.getcwd(),outTag,granularity,noise,threshold,outlog))
     scriptFile.write('echo "--Local directory is " $localdir >> g4.log\n')

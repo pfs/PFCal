@@ -38,7 +38,8 @@ std::string plotDir(const bool doPhi45,
       dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-13/version13/gamma/200um/eta" << etabin << "_et" << pt << "_pu" << pu;
     }
   } else {
-    dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/phi_0.250pi/eta" << etabin << "_et" << pt << "_pu" << pu;
+    //dir << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/gamma/200um/phi_0.250pi/eta" << etabin << "_et" << pt << "_pu" << pu;
+    dir << "/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE/analysis/PLOTS//gitV00-02-12/version12/gamma/200um/simultFit/eta" << etabin << "_et" << pt << "_pu" << pu;
   }
   return dir.str();
 };
@@ -213,12 +214,14 @@ Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, uns
   TLatex lat;
   char buf[500];
 
+  TH2D *p_errorMatrix_xy = (TH2D*)gDirectory->Get("p_errorMatrix_xy");
+  TH2D *p_corrMatrix_xy = (TH2D*)gDirectory->Get("p_corrMatrix_xy");
   TH2D *p_errorMatrix_x = (TH2D*)gDirectory->Get("p_errorMatrix_x");
   TH2D *p_corrMatrix_x = (TH2D*)gDirectory->Get("p_corrMatrix_x");
   TH2D *p_errorMatrix_y = (TH2D*)gDirectory->Get("p_errorMatrix_y");
   TH2D *p_corrMatrix_y = (TH2D*)gDirectory->Get("p_corrMatrix_y");
   bool skipDetailed = false;
-  if (!p_errorMatrix_x) {
+  if (!p_errorMatrix_xy) {
     std::cout << " -- Warning, input file " << plotDir << " does not contain detailed fit histos..." << std::endl;
     //return res;
     skipDetailed = true;
@@ -266,30 +269,30 @@ Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, uns
   mycL->cd(1);
   gPad->SetLogz(1);
   if (!skipDetailed){
-    p_errorMatrix_x->SetStats(0);
-    p_errorMatrix_x->SetMinimum(0.01);
-    p_errorMatrix_x->Draw("colz");
+    p_errorMatrix_xy->SetStats(0);
+    p_errorMatrix_xy->SetMinimum(0.01);
+    p_errorMatrix_xy->Draw("colz");
   }
   mycL->cd(5);
   gPad->SetLogz(1);
   if (!skipDetailed){
-    p_corrMatrix_x->SetStats(0);
-    p_corrMatrix_x->SetMinimum(0.01);
-    p_corrMatrix_x->Draw("colz");
+    p_corrMatrix_xy->SetStats(0);
+    p_corrMatrix_xy->SetMinimum(0.01);
+    p_corrMatrix_xy->Draw("colz");
   }
   mycL->cd(2);
   gPad->SetLogz(1);
   if (!skipDetailed){
-    p_errorMatrix_y->SetStats(0);
-    p_errorMatrix_y->SetMinimum(0.01);
-    p_errorMatrix_y->Draw("colz");
+    p_errorMatrix_xy->SetStats(0);
+    p_errorMatrix_xy->SetMinimum(0.01);
+    p_errorMatrix_xy->Draw("colz");
   }
   mycL->cd(6);
   gPad->SetLogz(1);
   if (!skipDetailed){
-    p_corrMatrix_y->SetStats(0);
-    p_corrMatrix_y->SetMinimum(0.01);
-    p_corrMatrix_y->Draw("colz");
+    p_corrMatrix_xy->SetStats(0);
+    p_corrMatrix_xy->SetMinimum(0.01);
+    p_corrMatrix_xy->Draw("colz");
   }
 
   mycL->cd(3);
@@ -462,10 +465,10 @@ Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, uns
   if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/pos14_x_eta19_et50_pu140.C");
 
   mycR->cd(6);
-  p_impactYFF_residual->GetXaxis()->SetRangeUser(-2.5,5);
+  p_impactYFF_residual->GetXaxis()->SetRangeUser(-5,5);
   p_impactYFF_residual->Draw();
   mycR->cd(7);
-  p_impactY14_residual->GetXaxis()->SetRangeUser(-2.5,5);
+  p_impactY14_residual->GetXaxis()->SetRangeUser(-5,5);
   p_impactY14_residual->Draw();
 
   mycFit->cd();
@@ -499,7 +502,7 @@ Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, uns
   if (etabin==19 && pt==50 && pu==140) mycFit->Print(sumDir+"/pos14_y_eta19_et50_pu140.C");
 
   mycR->cd(4);
-  p_tanAngleX_residual->GetXaxis()->SetRangeUser(-0.03,0.06);
+  p_tanAngleX_residual->GetXaxis()->SetRangeUser(-0.06,0.06);
   p_tanAngleX_residual->Draw();
 
   mycFit->cd();
@@ -520,7 +523,7 @@ Result plotOnePoint(std::string plotDir, TCanvas * & mycFit, TString sumDir, uns
 
 
   mycR->cd(8);
-  p_angleY_residual->GetXaxis()->SetRangeUser(-0.03,0.06);
+  p_angleY_residual->GetXaxis()->SetRangeUser(-0.06,0.06);
   p_angleY_residual->Draw();
   mycFit->cd();
   p_angleY_residual->Draw("PE");
@@ -603,23 +606,23 @@ int plotPositionResoAll(){//main
 
   SetTdrStyle();
 
-  const bool doPhi45 = false;
+  const bool doPhi45 = true;
   const unsigned version=12;
 
-  const unsigned npu = 2;//3;
+  const unsigned npu = 1;//2;//3;
   const unsigned neta = 1;//4;//(doPhi45 || version==13) ? 4 : 7;
 
   const bool doVsE = false;
 
-  unsigned pu[npu] = {0,140};//,200};
-  unsigned eta[neta] = {19};
+  unsigned pu[npu] = {0};//,140};//,200};
+  unsigned eta[neta] = {17};
   //for (unsigned ieta(0);ieta<neta;++ieta){
   //eta[ieta] = 17+4*ieta;
     //if (doPhi45 || version==13) eta[ieta] = 17+4*ieta;
     //else eta[ieta] = 17+2*ieta;
   //}
 
-  TString sumDir = version==13? "PLOTS_v13" : doPhi45 ? "PLOTS_phi45" : "PLOTS" ;
+  TString sumDir = version==13? "PLOTS_v13" : doPhi45 ? "PLOTS_phirand" : "PLOTS" ;
 
   TCanvas *mycFit = new TCanvas("mycFit","mycFit",1);
   
@@ -696,8 +699,8 @@ int plotPositionResoAll(){//main
   TGraphErrors *grResolTanX[neta][npu];
   TGraphErrors *grResolTanY[neta][npu];
 
-  const unsigned npt = 17;
-  unsigned pt[npt] = {3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  const unsigned npt = 1;//17;
+  unsigned pt[npt] = {20};//3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
   double ptval[npu][npt];
   //plot pu
 

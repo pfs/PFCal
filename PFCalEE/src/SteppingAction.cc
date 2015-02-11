@@ -84,13 +84,25 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //record truth particles
   //time cut: we don't want neutrons re-entering the front-face a long time after...
   //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
+  if (abs(pdgId)>99 && 
+      thePrePVname=="Si30_0phys" && 
+      (thePostPVname=="Si30_0phys"||thePostPVname=="Si30_1phys"))
+    {
+      eventAction_->fout() << pdgId 
+	    << " " << globalTime  << " " << lTrack->GetMomentum().mag()
+	    << std::endl;
+    }
+
+  return;
 
   if (globalTime < timeLimit_ && 
       thePrePVname=="Wphys"
       && (thePostPVname==eventAction_->GetFirstVolumeName())
       ){
     //if (pdgId == 2112) 
-    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime << std::endl;
+    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << globalTime 
+    //<< " " <<  pdgId << " " << trackID << " " << parentID
+    //<< std::endl;
     //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
     const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
     //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]

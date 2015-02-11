@@ -193,6 +193,30 @@ public:
 		    FitResult & fit,
 		    const bool cutOutliers=false);
 
+  unsigned GetIndependentFitResult(const TMatrixDSym & e,
+				   const unsigned nL,
+				   //const unsigned rt,
+				   const unsigned ievt,
+				   const TVectorD & z,
+				   const TVectorD & x,
+				   const TVectorD & y,
+				   const TVectorD & xy,
+				   TMatrixD & w,
+				   TVectorD & p,
+				   double & chiSq
+				   );
+
+  unsigned GetSimultaneousFitResult(const TMatrixDSym & e,
+				const unsigned nL,
+				//const unsigned rt,
+				const unsigned ievt,
+				const TVectorD & z,
+				const TVectorD & xy,
+				TVectorD & simPars,
+				TVectorD & delta,
+				double & chiSq
+				);
+
   inline void setOutputFile(TFile * outputFile){
     outputFile_ = outputFile;
     outputFile_->mkdir(outputDir_.c_str());
@@ -242,6 +266,7 @@ private:
   unsigned nSR_;
   double residualMax_;
   double chi2ndfmax_;
+  double precision_;
   double seedMipThreshold_;
   double maxdR_;
   unsigned nLayers_;
@@ -260,12 +285,12 @@ private:
   std::vector<double> avgZ_;
 
   //initialisation for error matrix
-  std::vector<double> mean_[2];//sum residuals for x and y
-  std::vector<std::vector<double> > sigma_[2];//sum square
+  std::vector<double> mean_;//sum residuals for x and y
+  std::vector<std::vector<double> > sigma_;//sum square
   std::vector<unsigned> nL_mean_;//number of valid layers
   std::vector<std::vector<unsigned> > nL_sigma_;
-  TMatrixD matrix_[2];
-  TMatrixD corrMatrix_[2];
+  TMatrixD matrix_;
+  TMatrixD corrMatrix_;
 
   Direction recoDir_;
   Direction truthDir_;
@@ -274,6 +299,7 @@ private:
 
   unsigned nInvalidFits_;
   unsigned nFailedFitsAfterCut_;
+  unsigned countFailedSimFits_;
   std::ofstream fout_;
 
   //path for saving data files
@@ -324,7 +350,7 @@ private:
   TH2F *p_yvsx_truth;
 
   //fit histos
-
+  TH1F *p_iterations;
   TH1F *p_nLayersFit;
   TH2F *p_recoXvsLayer;
   TH2F *p_recoYvsLayer;
@@ -333,24 +359,32 @@ private:
   TH2F *p_truthYvsLayer;
   TH2F *p_fitXvsLayer;
   TH2F *p_fitYvsLayer;
-  TH2D *p_errorMatrix_x;
-  TH2D *p_corrMatrix_x;
-  TH2D *p_errorMatrix_y;
-  TH2D *p_corrMatrix_y;
+  TH2D *p_errorMatrix_xy;
+  TH2D *p_corrMatrix_xy;
+  //TH2D *p_errorMatrix_y;
+  //TH2D *p_corrMatrix_y;
   TH1F *p_chi2[2];
   TH1F *p_chi2overNDF[2];
+  TH1F *p_impactX0[2];
+  TH1F *p_impactY0[2];
   TH1F *p_impactXFF[2];
   TH1F *p_impactYFF[2];
   TH1F *p_impactX14[2];
   TH1F *p_impactY14[2];
+  TH1F *p_impactZx[2];
+  TH1F *p_impactZy[2];
   TH1F *p_tanAngleX[2];
   TH1F *p_tanAngleY[2];
   TH1F *p_positionReso;
   TH1F *p_angularReso;
+  TH1F *p_impactX0_residual;
+  TH1F *p_impactY0_residual;
   TH1F *p_impactXFF_residual;
   TH1F *p_impactYFF_residual;
   TH1F *p_impactX14_residual;
   TH1F *p_impactY14_residual;
+  TH1F *p_impactZx_residual;
+  TH1F *p_impactZy_residual;
   TH1F *p_tanAngleX_residual;
   TH1F *p_tanAngleY_residual;
   TH1F *p_angleX_residual;

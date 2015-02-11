@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <map>
+#include "fstream"
 
 class RunAction;
 class EventActionMessenger;
@@ -42,6 +43,8 @@ public:
   void Add( std::vector<SamplingSection> *newDetector ) { detector_=newDetector; }
   //Float_t GetCellSize() { return cellSize_; }
 
+  std::ofstream & fout() {return fout_;}
+
   std::string GetFirstVolumeName() const;
 
 private:
@@ -55,6 +58,7 @@ private:
   HGCSSSimHitVec hitvec_;
   HGCSSGenParticleVec genvec_;
   EventActionMessenger*  eventMessenger;
+  std::ofstream fout_;
 
 };
 

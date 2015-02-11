@@ -70,14 +70,15 @@ bool SignalRegion::initialiseFitPositions(){
   while (!fxypos.eof()){
     unsigned eventIndex = nevt_;
     double xpos(0),ypos(0),xangle(0),yangle(0);
-    double fitMatrix[4] = {0,0,0,0};
-    fxypos >> eventIndex >> xpos >> fitMatrix[0] >> xangle >> fitMatrix[1] >> ypos >> fitMatrix[2] >> yangle >> fitMatrix[3];
+    std::string fitMatrix[4] = {"0","0","0","0"};
+    double xpost(0),ypost(0),xanglet(0),yanglet(0);
+    fxypos >> eventIndex >> xpos >> fitMatrix[0] >> xangle >> fitMatrix[1] >> ypos >> fitMatrix[2] >> yangle >> fitMatrix[3] >> xpost >> xanglet >> ypost >>yanglet ;
     //testing for nan
-    if ( eventIndex != eventIndex || xpos != xpos || fitMatrix[0]!=fitMatrix[0] || xangle!=xangle || fitMatrix[1]!=fitMatrix[1] || ypos!=ypos || fitMatrix[2]!=fitMatrix[2] || yangle!=yangle || fitMatrix[3]!=fitMatrix[3]){
-      std::cout << " Found nan ! Fix code !" << std::endl;
-      std::cout << eventIndex << " " << xpos << " " << fitMatrix[0] << " " << xangle << " " << fitMatrix[1] << " " << ypos << " " << fitMatrix[2] << " " << yangle << " " << fitMatrix[3]<< std::endl;
-      exit(1);
-    }
+    //if ( eventIndex != eventIndex || xpos != xpos || fitMatrix[0]!=fitMatrix[0] || xangle!=xangle || fitMatrix[1]!=fitMatrix[1] || ypos!=ypos || fitMatrix[2]!=fitMatrix[2] || yangle!=yangle || fitMatrix[3]!=fitMatrix[3]){
+    //std::cout << " Found nan ! Fix code !" << std::endl;
+    //std::cout << eventIndex << " " << xpos << " " << fitMatrix[0] << " " << xangle << " " << fitMatrix[1] << " " << ypos << " " << fitMatrix[2] << " " << yangle << " " << fitMatrix[3]<< std::endl;
+    //exit(1);
+    //}
     if (eventIndex<nevt_) {
       accurateFit_[eventIndex].pos_x = xpos;
       accurateFit_[eventIndex].pos_y = ypos;

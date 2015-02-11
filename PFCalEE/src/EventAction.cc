@@ -36,6 +36,12 @@ EventAction::EventAction()
   tree_->Branch("HGCSSSamplingSectionVec","std::vector<HGCSSSamplingSection>",&ssvec_);
   tree_->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&hitvec_);
   tree_->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&genvec_);
+
+  fout_.open("momentum_list_layer30.dat");
+  if (!fout_.is_open()){
+    std::cout << " -- Output file could not be opened..." << std::endl;
+    exit(1);
+  }
 }
 
 //
@@ -44,6 +50,7 @@ EventAction::~EventAction()
   outF_->cd();
   tree_->Write();
   outF_->Close();
+  fout_.close();
   delete eventMessenger;
 }
 
@@ -55,7 +62,7 @@ void EventAction::BeginOfEventAction(const G4Event* evt)
     G4cout << "\n---> Begin of event: " << evtNb_ << G4endl;
     CLHEP::HepRandom::showEngineStatus();
   }
-
+  fout_ << "Event " << evtNb_ << std::endl;
 
 }
 
@@ -78,6 +85,7 @@ std::string EventAction::GetFirstVolumeName() const{
 //
 void EventAction::EndOfEventAction(const G4Event*)
 {
+  return;
   bool debug(evtNb_%printModulo == 0);
   hitvec_.clear();
 
