@@ -1303,9 +1303,9 @@ void PositionFit::fillErrorMatrix(const std::vector<ROOT::Math::XYPoint> & recoP
     if (nHits[iL]==0) continue;
     double residual_xi = recoPos[iL].X()-truthPos(iL).X();
     double residual_yi = recoPos[iL].Y()-truthPos(iL).Y();
+   if (fabs(residual_xi)>residualMax_ || fabs(residual_yi)>residualMax_) continue;
     p_residuals_x->Fill(residual_xi);
     p_residuals_y->Fill(residual_yi);
-   if (fabs(residual_xi)>residualMax_ || fabs(residual_yi)>residualMax_) continue;
     //unsigned posmm = static_cast<unsigned>(fabs(truthPos(iL).Y())+5);
     //bool isEdge = posmm%10 <= 2 || posmm%10 >= 8;
     //if (!isEdge) continue;
