@@ -36,14 +36,14 @@
 
 #include "G4VUserPhysicsList.hh"
 //for hadronic processes
-//#include "QGSP_FTFP_BERT.hh"
-#include "QGSP_BERT.hh"
+#include "QGSP_FTFP_BERT.hh"
+//#include "QGSP_BERT.hh"
 #include "globals.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-//class PhysicsList: public QGSP_FTFP_BERT //G4VUserPhysicsList
-class PhysicsList: public QGSP_BERT //G4VUserPhysicsList
+class PhysicsList: public QGSP_FTFP_BERT //G4VUserPhysicsList
+//class PhysicsList: public QGSP_BERT //G4VUserPhysicsList
 {
 public:
   PhysicsList();

@@ -34,7 +34,7 @@ int plotMomentumMinbias(){
 
   f[0] = TFile::Open("../PLOTS/output_hepmc.root");
   //f[1] = TFile::Open("../PLOTS/hadronMomentumAtShowerMax_all.root");
-  f[1] = TFile::Open("PLOTS/output_layer30.root");
+  f[1] = TFile::Open("PLOTS/output_layer30_ftfp.root");
   f[1]->cd();
   TGraph *gr = (TGraph*)gDirectory->Get("grID");
   f[1]->cd("neutrons");
@@ -200,7 +200,7 @@ int plotMomentumMinbias(){
   gr->SetFillColor(4);
   gr->Draw("AB1");
   std::vector<std::string> part;
-  part.push_back("#bar{#Xi^{0}}");
+  /*part.push_back("#bar{#Xi^{0}}");
   part.push_back("#Xi^{+}");
   part.push_back("#bar{#Sigma^{+}}");
   part.push_back("#bar{#Lambda}");
@@ -221,8 +221,30 @@ int plotMomentumMinbias(){
   part.push_back("#Sigma^{+}");
   part.push_back("#Xi^{-}");
   part.push_back("#Xi^{0}");
+  part.push_back("Ions");*/
+  //part.push_back("#bar{#Lambda}");
+  part.push_back("#bar{p}");
+  part.push_back("#bar{n}");
+  part.push_back("K^{-}");
+  part.push_back("#pi^{-}");
+  part.push_back("#bar{#nu_{#mu}}");
+  part.push_back("#mu^{+}");
+  part.push_back("#bar{#nu_{e}}");
+  part.push_back("e^{+}");
+  part.push_back("e^{-}");
+  part.push_back("#nu_{e}");
+  part.push_back("#mu^{-}");
+  part.push_back("#nu_{#mu}");
+  part.push_back("#gamma");
+  part.push_back("K^{0}_{L}");
+  part.push_back("#pi^{+}");
+  part.push_back("K^{0}_{S}");
+  part.push_back("K^{+}");
+  part.push_back("n");
+  part.push_back("p");
+  part.push_back("#Sigma^{-}");
+  part.push_back("#Lambda");
   part.push_back("Ions");
- 
   TAxis *ax = gr->GetHistogram()->GetXaxis();
   double x1 = ax->GetBinLowEdge(1);
   double x2 = gr->GetN();

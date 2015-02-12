@@ -84,13 +84,21 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //record truth particles
   //time cut: we don't want neutrons re-entering the front-face a long time after...
   //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
-  if (abs(pdgId)>99 && 
+  if (//abs(pdgId)>99 && 
       thePrePVname=="Si30_0phys" && 
       (thePostPVname=="Si30_0phys"||thePostPVname=="Si30_1phys"))
     {
       eventAction_->fout() << pdgId 
-	    << " " << globalTime  << " " << lTrack->GetMomentum().mag()
-	    << std::endl;
+			   << " " << globalTime  
+			   << " " << lTrack->GetMomentum().mag();
+      if (abs(pdgId)>1000000000) eventAction_->fout() << " " << lTrack->GetTrackStatus()
+						      << " " << stepl
+						      << " " << aStep->GetTotalEnergyDeposit()
+						      << " " << aStep->GetNonIonizingEnergyDeposit()
+						      << " " << lTrack->GetCreatorProcess()->GetProcessName()
+						      << " " << lTrack->GetKineticEnergy()
+				   ;
+      eventAction_->fout() << std::endl;
     }
 
   return;
