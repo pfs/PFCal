@@ -715,6 +715,8 @@ int plotEGReso(){//main
 	
 	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[neta][nPu][nGenEnAll];
+	TFile *inputFile[neta][nPu][nGenEnAll];
+
 	TGraphErrors *resoRecoFit[nPu][neta][nSR];
 	
 	for (unsigned ieta(0);ieta<neta;++ieta){//loop on eta
@@ -734,32 +736,31 @@ int plotEGReso(){//main
 	  for (unsigned iE(0); iE<nGenEnAll; ++iE){
 	    ltree[ieta][ipu][iE] = 0;
 	    skip[iE] = false;
-	    TFile *inputFile = 0;
+	    inputFile[ieta][ipu][iE] = 0;
 	    std::ostringstream linputStr;
 	    if (pu[ipu]!=200) linputStr << plotDir ;
 	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
 	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC0";// << ICval[ic];
 	    if (!processNoFitFiles) linputStr << ".root";
 	    else linputStr << "_nofit.root";
-	    inputFile = TFile::Open(linputStr.str().c_str());
-	    if (!inputFile) {
+	    inputFile[ieta][ipu][iE] = TFile::Open(linputStr.str().c_str());
+	    if (!inputFile[ieta][ipu][iE]) {
 	      std::cout << " -- Error, input file " << linputStr.str() << " cannot be opened. Skipping..." << std::endl;
 	      //	    return 1;
 	      skip[iE] = true;
 	    }
 	    else {
-	      inputFile->cd("Energies");
+	      inputFile[ieta][ipu][iE]->cd("Energies");
 	      ltree[ieta][ipu][iE] = (TTree*)gDirectory->Get("Ereso");
 	      
 	      if (!ltree[ieta][ipu][iE]){
-		std::cout << " -- File " << inputFile->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
+		std::cout << " -- File " << inputFile[ieta][ipu][iE]->GetName() << " sucessfully opened but tree Ereso not found! Skipping." << std::endl;
 		skip[iE] = true;
 	      } else { 
-	      std::cout << " -- File " << inputFile->GetName() << " sucessfully opened and tree found." << std::endl;
+	      std::cout << " -- File " << inputFile[ieta][ipu][iE]->GetName() << " sucessfully opened and tree found." << std::endl;
 	      nValid++;
 	      }
 	    }
-	    inputFile->Close();
 	  }
 	  
 	  unsigned newidx = 0;
@@ -824,15 +825,7 @@ int plotEGReso(){//main
 	    std::cout << "- Processing energy : " << genEn[iE] 
 		      << std::endl;
 	    
-	    TFile *inputFile = 0;
-	    std::ostringstream linputStr;
-	    if (pu[ipu]!=200) linputStr << plotDir ;
-	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC0";// << ICval[ic];
-	    if (!processNoFitFiles) linputStr << ".root" ;
-	    else linputStr << "_nofit.root";
-	    inputFile = TFile::Open(linputStr.str().c_str());
-	    inputFile->cd("Energies");
+	    inputFile[ieta][ipu][oldIdx[iE]]->cd("Energies");
 
 	    std::cout << " -- Tree entries for eta=" << eta[ieta] << " pu=" << pu[ipu] << " : " << ltree[ieta][ipu][oldIdx[iE]]->GetEntries() << std::endl;
 
@@ -876,10 +869,10 @@ int plotEGReso(){//main
 		for (unsigned iL(0);iL<nLayers;++iL){
 		  //if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
 		  //else lName << "+" << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
-		  double fact = 1.0;
-		  if (ipu>0) fact = smearFact[iL];
-		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4*" << fact;
-		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4*" << fact;
+		  double fact = absWeight(iL,etaval[ieta]);
+		  if (ipu>0) fact = absWeight(iL,etaval[ieta])*smearFact[iL];
+		  if (iL==0) lName << fact << "*subtractedenergy_" << iL << "_SR4";
+		  else lName << "+" << fact << "*subtractedenergy_" << iL << "_SR4";
 		}
 	      }
 	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
@@ -971,7 +964,6 @@ int plotEGReso(){//main
 	    }
 
 
-	    inputFile->Close();
 	  }//loop on energies
 	  drawChi2(myc[2],p_chi2ndf);
 

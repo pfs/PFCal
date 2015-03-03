@@ -74,8 +74,8 @@ int plotResoVsIC(){
 
   TGraphErrors *gr[nIC][2];
   TGraphErrors *grCalib[nIC][2];
-  double x0,y0;
-  double x0_7,y0_7;
+  double y0=0;
+  double y0_7=0;
 
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     label.str("");
@@ -154,31 +154,27 @@ int plotResoVsIC(){
     sprintf(buf,"ICsmear = %d %%",ICval[ic]);
     lat.DrawLatexNDC(0.2,0.7,buf);
 
+    if (ic==0){
+      y0 = fit->GetParameter(1);
+      y0_7 = fit7->GetParameter(1);
+    }
+
     double cval = sqrt(pow(fit->GetParameter(1),2)-pow(y0,2));
     constant->SetPoint(ic,ICval[ic]/100.,cval);
-    constant->SetPointError(ic,0,fit->GetParameter(1)*fit->GetParError(1)/cval);
+    if (ic==0) constant->SetPointError(ic,0,fit->GetParError(1));
+    else constant->SetPointError(ic,0,fit->GetParameter(1)*fit->GetParError(1)/cval);
     noise->SetPoint(ic,ICval[ic]/100.,fit->GetParameter(2));
     noise->SetPointError(ic,0,fit->GetParError(2));
     sampling->SetPoint(ic,ICval[ic]/100.,fit->GetParameter(0));
     sampling->SetPointError(ic,0,fit->GetParError(0));
     cval = sqrt(pow(fit7->GetParameter(1),2)-pow(y0_7,2));
     constantSR7->SetPoint(ic,ICval[ic]/100.,cval);
-    constantSR7->SetPointError(ic,0,fit7->GetParameter(1)*fit7->GetParError(1)/cval);    
+    if (ic==0) constantSR7->SetPointError(ic,0,fit7->GetParError(1));
+    else constantSR7->SetPointError(ic,0,fit7->GetParameter(1)*fit7->GetParError(1)/cval);    
     //constantSR7->SetPoint(ic,ICval[ic]/100.,fit7->GetParameter(1));
     //constantSR7->SetPointError(ic,0,fit7->GetParError(1));
     samplingSR7->SetPoint(ic,ICval[ic]/100.,fit7->GetParameter(0));
     samplingSR7->SetPointError(ic,0,fit7->GetParError(0));
-
-    if (ic==0) {
-      constant->GetPoint(0,x0,y0);
-      constantSR7->GetPoint(0,x0_7,y0_7);
-      cval = sqrt(pow(fit->GetParameter(1),2)-pow(y0,2));
-      constant->SetPoint(ic,ICval[ic]/100.,cval);
-      constant->SetPointError(ic,0,fit->GetParameter(1)*fit->GetParError(1)/cval);
-      cval = sqrt(pow(fit7->GetParameter(1),2)-pow(y0_7,2));
-      constantSR7->SetPoint(ic,ICval[ic]/100.,cval);
-      constantSR7->SetPointError(ic,0,fit7->GetParameter(1)*fit7->GetParError(1)/cval);
-    }
 
   }
 
