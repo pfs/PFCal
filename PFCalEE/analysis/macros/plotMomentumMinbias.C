@@ -29,12 +29,23 @@ int plotMomentumMinbias(){
   TH1F *hN = 0;
   TH1F *hSi = 0;
 
+  unsigned siLayer=2;
+  std::string silabel = "_si2";
+
   const unsigned nF = 2;
   TFile *f[nF];
 
   f[0] = TFile::Open("../PLOTS/output_hepmc.root");
   //f[1] = TFile::Open("../PLOTS/hadronMomentumAtShowerMax_all.root");
-  f[1] = TFile::Open("PLOTS/output_layer30_ftfp.root");
+
+  std::ostringstream lstr;
+  lstr << "PLOTS/output_layer30_";
+  if (siLayer==3) lstr << "siAll";
+  else lstr << "si" << siLayer;
+  lstr << ".root";
+
+  f[1] = TFile::Open(lstr.str().c_str());
+
   f[1]->cd();
   TGraph *gr = (TGraph*)gDirectory->Get("grID");
   f[1]->cd("neutrons");
@@ -45,7 +56,7 @@ int plotMomentumMinbias(){
   myc[1] = new TCanvas("mycSM","Shower Max",1);
   myc[2] = new TCanvas("mycIPlog","IP",1);
   myc[3] = new TCanvas("mycSMlog","Shower Max",1);
-  myc[4] = new TCanvas("mycID","ID",1);
+  myc[4] = new TCanvas("mycID","ID",1500,1000);
   myc[5] = new TCanvas("mycT","T",1000,500);
 
   gStyle->SetOptStat(0);
@@ -113,8 +124,8 @@ int plotMomentumMinbias(){
       //double max = 1.1*std::max(hP->GetMaximum(),hN->GetMaximum());
       //double max = 1.1*std::max(hPi->GetMaximum(),std::max(hP->GetMaximum(),hN->GetMaximum()));
       //hP->SetMaximum(max);
-      if (dolog) hP->GetYaxis()->SetRangeUser(0.9,1.*1e6);
-      else hP->GetYaxis()->SetRangeUser(0.9,2.*1e7);
+      if (dolog) hP->GetYaxis()->SetRangeUser(0.9,3.*1e6);
+      else hP->GetYaxis()->SetRangeUser(0.9,3.*1e7);
       if (dolog==0) hP->GetXaxis()->SetRangeUser(0,30);
       hP->GetYaxis()->SetTitle("Particles");
       hP->Draw("hist");
@@ -155,7 +166,7 @@ int plotMomentumMinbias(){
       leg->AddEntry(hPi,leglabel.str().c_str(),"PL");
       if (iF==1){
 	leglabel.str("");
-	leglabel << "n(Si) = " << hSi->GetEntries();
+	leglabel << "n(ions) = " << hSi->GetEntries();
 	leg->AddEntry(hSi,leglabel.str().c_str(),"F");
       }
       leg->Draw("same");
@@ -175,6 +186,9 @@ int plotMomentumMinbias(){
 	} else {
 	  lat.DrawLatexNDC(0.52,0.75,"@shower max (layer 30)");
 	  lat.DrawLatexNDC(0.73,0.69,"2.8 < #eta <3.0");
+	  char buf[100];
+	  sprintf(buf,"Si layer %d",siLayer);
+	  lat.DrawLatexNDC(0.73,0.63,buf);
 	}
 	//} else {
 	//if (iF==0) {
@@ -187,8 +201,8 @@ int plotMomentumMinbias(){
 	//}
 
       myc[2*dolog+iF]->Update();
-      myc[2*dolog+iF]->Print(("PLOTS/"+label[2*dolog+iF]+".pdf").c_str());
-      myc[2*dolog+iF]->Print(("PLOTS/"+label[2*dolog+iF]+".png").c_str());
+      myc[2*dolog+iF]->Print(("PLOTS/"+label[2*dolog+iF]+silabel+".pdf").c_str());
+      myc[2*dolog+iF]->Print(("PLOTS/"+label[2*dolog+iF]+silabel+".png").c_str());
 
     }//dolog
   }//loop on files
@@ -200,7 +214,7 @@ int plotMomentumMinbias(){
   gr->SetFillColor(4);
   gr->Draw("AB1");
   std::vector<std::string> part;
-  /*part.push_back("#bar{#Xi^{0}}");
+  part.push_back("#bar{#Xi^{0}}");
   part.push_back("#Xi^{+}");
   part.push_back("#bar{#Sigma^{+}}");
   part.push_back("#bar{#Lambda}");
@@ -209,24 +223,7 @@ int plotMomentumMinbias(){
   part.push_back("#bar{n}");
   part.push_back("K^{-}");
   part.push_back("#pi^{-}");
-  part.push_back("#pi^{0}");
-  part.push_back("K^{0}_{L}");
-  part.push_back("#pi^{+}");
-  part.push_back("K^{0}_{S}");
-  part.push_back("K^{+}");
-  part.push_back("n");
-  part.push_back("p");
-  part.push_back("#Sigma^{-}");
-  part.push_back("#Lambda");
-  part.push_back("#Sigma^{+}");
-  part.push_back("#Xi^{-}");
-  part.push_back("#Xi^{0}");
-  part.push_back("Ions");*/
-  //part.push_back("#bar{#Lambda}");
-  part.push_back("#bar{p}");
-  part.push_back("#bar{n}");
-  part.push_back("K^{-}");
-  part.push_back("#pi^{-}");
+  part.push_back("#bar{#nu_{#tau}}");
   part.push_back("#bar{#nu_{#mu}}");
   part.push_back("#mu^{+}");
   part.push_back("#bar{#nu_{e}}");
@@ -235,16 +232,25 @@ int plotMomentumMinbias(){
   part.push_back("#nu_{e}");
   part.push_back("#mu^{-}");
   part.push_back("#nu_{#mu}");
+  part.push_back("#nu_{#tau}");
   part.push_back("#gamma");
+  part.push_back("#pi^{0}");
+  if (siLayer==1 || siLayer==3) part.push_back("#rho^{0}");
   part.push_back("K^{0}_{L}");
   part.push_back("#pi^{+}");
+  part.push_back("#eta");
   part.push_back("K^{0}_{S}");
   part.push_back("K^{+}");
+  if (siLayer!=1) part.push_back("#eta\'");
   part.push_back("n");
   part.push_back("p");
   part.push_back("#Sigma^{-}");
   part.push_back("#Lambda");
+  part.push_back("#Sigma^{+}");
+  part.push_back("#Xi^{-}");
+  part.push_back("#Xi^{0}");
   part.push_back("Ions");
+
   TAxis *ax = gr->GetHistogram()->GetXaxis();
   double x1 = ax->GetBinLowEdge(1);
   double x2 = gr->GetN();
@@ -255,7 +261,7 @@ int plotMomentumMinbias(){
 	    << std::endl;
 
   for(unsigned k=0;k<gr->GetN();k++){
-    gr->GetHistogram()->GetXaxis()->SetBinLabel(k+1,part[k].c_str());
+    if (k<part.size()) gr->GetHistogram()->GetXaxis()->SetBinLabel(k+1,part[k].c_str());
   }
   lat.SetTextSize(0.04);
   lat.DrawLatexNDC(0.1,0.96,"Pythia Minbias");
@@ -264,10 +270,13 @@ int plotMomentumMinbias(){
   lat.SetTextSize(0.04);
   lat.DrawLatexNDC(0.16,0.85,"@shower max (layer 30)");
   lat.DrawLatexNDC(0.16,0.78,"2.8 < #eta <3.0");
+  char buf[100];
+  sprintf(buf,"Si layer %d",siLayer);
+  lat.DrawLatexNDC(0.16,0.70,buf);
 
   myc[4]->Update();
-  myc[4]->Print("PLOTS/ShowerMaxParticles.pdf");
-  myc[4]->Print("PLOTS/ShowerMaxParticles.png");
+  myc[4]->Print(("PLOTS/ShowerMaxParticles"+silabel+".pdf").c_str());
+  myc[4]->Print(("PLOTS/ShowerMaxParticles"+silabel+".png").c_str());
 
 
   myc[5]->cd();
@@ -278,8 +287,8 @@ int plotMomentumMinbias(){
   hTvsLogp->Draw("colz");
 
   myc[5]->Update();
-  myc[5]->Print("PLOTS/ShowerMaxNeutronTimevsLogp.pdf");
-  myc[5]->Print("PLOTS/ShowerMaxNeutronTimevsLogp.png");
+  myc[5]->Print(("PLOTS/ShowerMaxNeutronTimevsLogp"+silabel+".pdf").c_str());
+  myc[5]->Print(("PLOTS/ShowerMaxNeutronTimevsLogp"+silabel+".png").c_str());
 
   return 0;
 

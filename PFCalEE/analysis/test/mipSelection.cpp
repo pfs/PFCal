@@ -231,7 +231,7 @@ int main(int argc, char** argv){//main
   else {
     inputbase << inFilePath //<< "/MipStudy.root";
 	      << "_run";
-    nTrees = 10;
+    nTrees = 2;
   }
   for (unsigned i(0); i<nTrees;++i){
     if (nTrees>1){

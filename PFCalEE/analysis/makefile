@@ -55,9 +55,9 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-#BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/plotHadronMomentum 
+BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/plotHadronMomentum 
 
-BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
+#BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 #BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection
 
 #BINS=$(EXEDIR)/vbfResolution $(EXEDIR)/calibration

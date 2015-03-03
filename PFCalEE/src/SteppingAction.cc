@@ -81,14 +81,19 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
 
 
   HGCSSGenParticle genPart;
+  //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname 
+    //<< " " << eventAction_->GetFirstVolumeName() << " " << globalTime 
+  //<< std::endl;
   //record truth particles
   //time cut: we don't want neutrons re-entering the front-face a long time after...
-  //std::cout << "-- debug: " << thePrePVname << " " << thePostPVname << " " << eventAction_->GetFirstVolumeName() << " " << globalTime << std::endl;
-  if (//abs(pdgId)>99 && 
-      thePrePVname=="Si30_0phys" && 
-      (thePostPVname=="Si30_0phys"||thePostPVname=="Si30_1phys"))
+  //bit for particles study
+  /*  if (//abs(pdgId)>99 && 
+      (thePrePVname=="Si30_0phys" || thePrePVname=="Si30_1phys" || thePrePVname=="Si30_2phys" || thePrePVname=="Cu30phys") && 
+      (thePostPVname=="PCB30phys" || thePostPVname=="Si30_0phys"|| thePostPVname=="Si30_1phys"|| thePostPVname=="Si30_2phys" || (thePostPVname=="Cu30phys" && thePrePVname=="Si30_2phys")))
     {
-      eventAction_->fout() << pdgId 
+      eventAction_->fout() << thePrePVname
+			   << " " << thePostPVname
+			   << " " << pdgId
 			   << " " << globalTime  
 			   << " " << lTrack->GetMomentum().mag();
       if (abs(pdgId)>1000000000) eventAction_->fout() << " " << lTrack->GetTrackStatus()
@@ -102,6 +107,7 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
     }
 
   return;
+  */
 
   if (globalTime < timeLimit_ && 
       thePrePVname=="Wphys"

@@ -199,6 +199,12 @@ int main(int argc, char** argv){//main
     std::cout << " -- output file " << outputFile->GetName() << " successfully opened." << std::endl;
   }
   outputFile->cd();
+  TH1F *p_Edep_si0 = new TH1F("p_Edep_si0",";E dep (MeV);events",500,0,50);
+  TH1F *p_Edep_si1 = new TH1F("p_Edep_si1",";E dep (MeV);events",500,0,50);
+  TH1F *p_Edep_si2 = new TH1F("p_Edep_si2",";E dep (MeV);events",500,0,50);
+  TH1F *p_Edep_si1over0 = new TH1F("p_Edep_si1over0",";si1/si0;events",100,0,2);
+  TH1F *p_Edep_si2over0 = new TH1F("p_Edep_si2over0",";si2/si0;events",100,0,2);
+  TH1F *p_Edep_si2over1 = new TH1F("p_Edep_si2over1",";si2/si1;events",100,0,2);
 
   outputFile->mkdir("pipm");
   outputFile->mkdir("protons");
@@ -270,16 +276,25 @@ int main(int argc, char** argv){//main
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
 
     lSimTree->GetEntry(ievt);
-    for (unsigned iG(0); iG<(*genvec).size(); ++iG){//loop on genparticles
-      const HGCSSGenParticle & lgen = (*genvec)[iG];
-      if (lgen.eta()<2.8 || lgen.eta()>3.0) continue;
-      unsigned pdgid = abs(lgen.pdgid());
-      if (pdgid != 2212 && pdgid != 2112 && pdgid != 211) continue;
-      unsigned gentrkId =  lgen.trackID();
-      for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
-	const HGCSSSimHit & lHit = (*simhitvec)[iH];
-	if (lHit.layer()!=30) continue;
-	unsigned trkId =  lHit.mainParentTrackID();
+
+    double Esi0=0;
+    double Esi1=0;
+    double Esi2=0;
+
+    for (unsigned iH(0); iH<(*simhitvec).size(); ++iH){//loop on hits
+      const HGCSSSimHit & lHit = (*simhitvec)[iH];
+      if (lHit.layer()!=30) continue;
+      unsigned trkId =  lHit.mainParentTrackID();
+      if (lHit.silayer()==0) Esi0+=lHit.energy();
+      else if (lHit.silayer()==1) Esi1+=lHit.energy();
+      else if (lHit.silayer()==2) Esi2+=lHit.energy();
+      
+      for (unsigned iG(0); iG<(*genvec).size(); ++iG){//loop on genparticles
+	const HGCSSGenParticle & lgen = (*genvec)[iG];
+	if (lgen.eta()<2.8 || lgen.eta()>3.0) continue;
+	unsigned pdgid = abs(lgen.pdgid());
+	if (pdgid != 2212 && pdgid != 2112 && pdgid != 211) continue;
+	unsigned gentrkId =  lgen.trackID();
 	if (gentrkId != trkId) continue;
 	double p = sqrt(pow(lgen.px(),2)+pow(lgen.py(),2)+pow(lgen.pz(),2));
 	if (pdgid == 211) {
@@ -333,10 +348,18 @@ int main(int argc, char** argv){//main
 	  nNeutrons++;
 	  break;
 	}
-      }
+      }//loop on genparts
 
     }//loop on hits
-      
+    p_Edep_si0->Fill(Esi0);
+    p_Edep_si1->Fill(Esi1);
+    p_Edep_si2->Fill(Esi2);
+    if (Esi0!=0){
+      p_Edep_si1over0->Fill(Esi1/Esi0);  
+      p_Edep_si2over0->Fill(Esi2/Esi0);
+    }
+    if (Esi1!=0) p_Edep_si2over1->Fill(Esi2/Esi1);
+    
   }//loop on entries
   
   std::cout << " -- Summary:" << std::endl

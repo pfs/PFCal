@@ -18,8 +18,16 @@
 #include "TString.h"
 #include "TLatex.h"
 #include "TGaxis.h"
+#include "TRandom3.h"
 
 #include "TDRStyle.h"
+
+
+double SmearE(double mean,double sigma){
+  TRandom3 rndm;
+  rndm.SetSeed(0);
+  return rndm.Gaus(mean,sigma);
+};
 
 struct FitResult{
   double chi2;
@@ -582,6 +590,8 @@ int plotEGReso(){//main
   const unsigned nIC = 10;
   const unsigned ICval[nIC] = {0,1,2,3,4,5,10,15,20,50};
 
+  const unsigned nPts = 1;
+
   const unsigned nPu = 2;//4;
   unsigned pu[nPu] = {0,0};//,140,200};
 
@@ -680,17 +690,26 @@ int plotEGReso(){//main
     p_chi2ndf[iSR]->StatOverflows();
   }
 
-
+ for (unsigned ip(0);ip<nPts;++ip){//loop on tries
+ 
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
     TFile *fcalib;
     std::ostringstream label;
     label << "PLOTS/CalibReso";
     if (dovsE) label << "_vsE";
-    label << "_IC" << ICval[ic];
+    label << "_SR7_IC" << ICval[ic];
+    label << "_try" << ip;
     label << ".root";
     fcalib = TFile::Open(label.str().c_str(),"RECREATE");
     
+    TRandom3 lrndm;
+    lrndm.SetSeed(0);
+    double smearFact[nLayers];
+    for (unsigned iL(0); iL<nLayers;++iL){
+      smearFact[iL] = lrndm.Gaus(1.,ICval[ic]/100.);
+    }
+
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
@@ -719,7 +738,7 @@ int plotEGReso(){//main
 	    std::ostringstream linputStr;
 	    if (pu[ipu]!=200) linputStr << plotDir ;
 	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC" << ICval[ic];
+	    linputStr << "eta" << eta[ieta] << "_et" << genEnAll[iE] << "_pu" << pu[ipu] << "_IC0";// << ICval[ic];
 	    if (!processNoFitFiles) linputStr << ".root";
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -740,6 +759,7 @@ int plotEGReso(){//main
 	      nValid++;
 	      }
 	    }
+	    inputFile->Close();
 	  }
 	  
 	  unsigned newidx = 0;
@@ -808,7 +828,7 @@ int plotEGReso(){//main
 	    std::ostringstream linputStr;
 	    if (pu[ipu]!=200) linputStr << plotDir ;
 	    else linputStr << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version"+version[iV]+"/"+scenario[iS]+"/";
-	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC" << ICval[ic];
+	    linputStr << "eta" << eta[ieta] << "_et" << genEn[iE] << "_pu" << pu[ipu]  << "_IC0";// << ICval[ic];
 	    if (!processNoFitFiles) linputStr << ".root" ;
 	    else linputStr << "_nofit.root";
 	    inputFile = TFile::Open(linputStr.str().c_str());
@@ -851,7 +871,17 @@ int plotEGReso(){//main
 		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4";
 		}
 	      }
-	      else lName << "wgtEtotal";///" << tanh(etaval[ieta]);
+	      else {
+		//lName << "wgtEtotal";///" << tanh(etaval[ieta]);
+		for (unsigned iL(0);iL<nLayers;++iL){
+		  //if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
+		  //else lName << "+" << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
+		  double fact = 1.0;
+		  if (ipu>0) fact = smearFact[iL];
+		  if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4*" << fact;
+		  else lName << "+" << absWeight(iL,etaval[ieta]) << "*subtractedenergy_" << iL << "_SR4*" << fact;
+		}
+	      }
 	      if (ipu>0) lName << " - " << offset[0][ieta][iSR] << ")/" << calib[0][ieta][iSR];
 	      ltree[ieta][ipu][oldIdx[iE]]->Draw(lName.str().c_str(),"","");
 	      lName.str("");
@@ -941,8 +971,8 @@ int plotEGReso(){//main
 	    }
 
 
+	    inputFile->Close();
 	  }//loop on energies
-	 
 	  drawChi2(myc[2],p_chi2ndf);
 
 
@@ -1299,10 +1329,12 @@ int plotEGReso(){//main
   }//loop on versions
 
     fcalib->Write();
+    fcalib->Close();
     
   }//loop on IC vals
 
+ }//loop on points
 
-  return 0;
+ return 0;
   
 }//main

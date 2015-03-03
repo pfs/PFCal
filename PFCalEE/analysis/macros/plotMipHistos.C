@@ -98,10 +98,10 @@ int plotMipHistos(){
 
   const unsigned nEta = 1;
   //const unsigned nNoise = 10;
-  const unsigned nNoise = 5;//10;
+  const unsigned nNoise = 6;//10;
 
   //const double noise[nNoise] = {0,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5};
-  const double noise[nNoise] = {0.6,0.7,0.8,0.9,1.0};
+  const double noise[nNoise] = {0,0.6,0.7,0.8,0.9,1.0};
 
   const double eta[nEta] = {2.85};//1.7,2.0,2.5};
 
@@ -135,7 +135,8 @@ int plotMipHistos(){
   std::ostringstream outFilePath;
   outFilePath << "/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/Histos" << suffix.str() << ".root";
   TFile *file = TFile::Open(outFilePath.str().c_str());
-  file->cd();
+
+  TFile *file0 = TFile::Open("/afs/cern.ch/work/a/amagnan/PFCalEEAna/PLOTS/gitV00-02-12/version12/MinBias/HistosEta2.85_thresh0.9_5_EmaxNeighbour0.05_trk5layers_onlyOne.root");
 
   if (doSignalOnly) suffix << "_sigOnly";
 
@@ -145,6 +146,7 @@ int plotMipHistos(){
   double mpshift  = 0;//0.22278298;
 
   TH1F *hitSpectrum[nEta][nNoise][nLayers];
+  TH1F *hitSpectrumSig[nEta][nNoise][nLayers];
   TH1F *p_nHits[nEta][nNoise][nLayers];
 
   TH1F *p_EmaxNeighbour[nEta][nNoise];
@@ -179,6 +181,7 @@ int plotMipHistos(){
 
   //TH1F *hitSpectrum[nEta][nNoise][nLayers];
   TH1F *hitSpectrumAll[nEta][nNoise];
+  TH1F *hitSpectrumAllSig[nEta][nNoise];
 
   TGraphErrors *grNhits[nEta][nNoise];
   TGraphErrors *grMPV[nEta][nNoise];
@@ -205,6 +208,8 @@ int plotMipHistos(){
       label << "grSigma_eta" << eta[ie]*10 << "_noise" << noise[in]*100;
       grSigma[ie][in]->SetName(label.str().c_str());
 
+      if (in==0) file0->cd();
+      else file->cd();
       label.str("");
       label << "EmaxNeighbour_eta" << eta[ie]*10 << "_noise" << noise[in]*100;
       p_EmaxNeighbour[ie][in] = (TH1F*)gDirectory->Get(label.str().c_str());
@@ -214,12 +219,19 @@ int plotMipHistos(){
 	if (doSignalOnly) label << "Sig";
 	label << "_eta" << eta[ie]*10 << "_noise" << noise[in]*100 << "_layer" << il;
 	hitSpectrum[ie][in][il] = (TH1F*)gDirectory->Get(label.str().c_str());
+	if (il==0) hitSpectrumAll[ie][in] = (TH1F*)hitSpectrum[ie][in][il]->Clone(label.str().c_str());
+	else hitSpectrumAll[ie][in]->Add(hitSpectrum[ie][in][il]);
+
+	label.str("");
+	label << "hitSpectrumSig_eta" << eta[ie]*10 << "_noise" << noise[in]*100 << "_layer" << il;
+	hitSpectrumSig[ie][in][il] = (TH1F*)gDirectory->Get(label.str().c_str());
+ 	if (il==0) hitSpectrumAllSig[ie][in] = (TH1F*)hitSpectrumSig[ie][in][il]->Clone(label.str().c_str());
+	else hitSpectrumAllSig[ie][in]->Add(hitSpectrumSig[ie][in][il]);
+
 	label.str("");
 	label << "Nhits_eta" << eta[ie]*10 << "_noise" << noise[in]*100 << "_layer" << il;
 	p_nHits[ie][in][il] = (TH1F*)gDirectory->Get(label.str().c_str());
 	
-	if (il==0) hitSpectrumAll[ie][in] = (TH1F*)hitSpectrum[ie][in][il]->Clone(label.str().c_str());
-	else hitSpectrumAll[ie][in]->Add(hitSpectrum[ie][in][il]);
       }
     }
   }
@@ -325,8 +337,13 @@ int plotMipHistos(){
     for (unsigned in(0); in<nNoise;++in){
       myc->cd(in+1);
       gPad->SetLogy(1);
-      if (noise[in]>0.3) hitSpectrumAll[ie][in]->Rebin(2);
+      if (noise[in]>0.3) {
+	hitSpectrumAll[ie][in]->Rebin(2);
+	hitSpectrumAllSig[ie][in]->Rebin(2);
+      }
       hitSpectrumAll[ie][in]->Draw();
+      hitSpectrumAllSig[ie][in]->SetLineColor(4);
+      hitSpectrumAllSig[ie][in]->Draw("same");
       double minfit = 0.5;
       double maxfit = noise[in]<0.31 ? 1.5 : 2.5;//1.7;
       if (in==0){
@@ -362,6 +379,10 @@ int plotMipHistos(){
       sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
       lat.DrawLatexNDC(0.2,0.75,buf);
 
+      lat.SetTextColor(4);
+      lat.DrawLatexNDC(0.7,0.25,"Signal only");
+      lat.SetTextColor(1);
+
       if (noise[in] == 0.3){
 	mycP->cd();
 	gStyle->SetOptFit(0);
@@ -392,10 +413,18 @@ int plotMipHistos(){
       myc->cd(in+1);
       gPad->SetLogy(0);
       hitSpectrumAll[ie][in]->Draw();
-      sprintf(buf,"Noise = %3.2f MIPs",noise[in]);
-      lat.DrawLatexNDC(0.2,0.85,buf);
-      sprintf(buf,"%3.2f < #eta < %3.2f",eta[ie]-deta,eta[ie]+deta);
-      lat.DrawLatexNDC(0.2,0.75,buf);
+      hitSpectrumAllSig[ie][in]->Draw("same");
+      sprintf(buf,"Noise = %3.1f MIPs",noise[in]);
+      lat.DrawLatexNDC(0.35,0.8,buf);
+      sprintf(buf,"%3.2f < #eta < %3.1f",eta[ie]-deta,eta[ie]+deta);
+      lat.DrawLatexNDC(0.35,0.87,buf);
+      lat.SetTextColor(4);
+      lat.DrawLatexNDC(0.7,0.2,"From signal");
+      lat.SetTextColor(1);
+      lat.DrawLatexNDC(0.7,0.25,"All");
+      lat.SetTextColor(2);
+      lat.DrawLatexNDC(0.78,0.25,"+ fit");
+      lat.SetTextColor(1);
 
       mycM->cd(in+1);
       gPad->SetGridy(1);
