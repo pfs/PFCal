@@ -590,7 +590,8 @@ int plotEGReso(){//main
   const unsigned nIC = 1;
   const unsigned ICval[nIC] = {10};//,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPts = 100;
+  const unsigned nPts = 136;
+  const unsigned startIdx = 64;
 
   const unsigned nPu = 3;//4;
   unsigned pu[nPu] = {0,0,0};//,140,200};
@@ -690,7 +691,7 @@ int plotEGReso(){//main
     p_chi2ndf[iSR]->StatOverflows();
   }
 
- for (unsigned ip(0);ip<nPts;++ip){//loop on tries
+  for (unsigned ip(startIdx);ip<(startIdx+nPts);++ip){//loop on tries
  
   for (unsigned ic(0);ic<nIC;++ic){//loop on intercalib
     
