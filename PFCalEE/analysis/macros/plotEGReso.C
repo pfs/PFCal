@@ -587,10 +587,10 @@ int plotEGReso(){//main
   bool dovsE = true;
   bool processNoFitFiles = false;
 
-  const unsigned nIC = 10;
-  const unsigned ICval[nIC] = {0,1,2,3,4,5,10,15,20,50};
+  const unsigned nIC = 1;
+  const unsigned ICval[nIC] = {10};//,1,2,3,4,5,10,15,20,50};
 
-  const unsigned nPts = 1;
+  const unsigned nPts = 100;
 
   const unsigned nPu = 3;//4;
   unsigned pu[nPu] = {0,0,0};//,140,200};
@@ -647,8 +647,8 @@ int plotEGReso(){//main
   
   std::ostringstream saveName;
 
-  unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
-  //unsigned genEnAll[]={7,10,20,30,40};
+  //unsigned genEnAll[]={3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200};
+  unsigned genEnAll[]={5,10,20,50,100};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
 
 
@@ -985,6 +985,7 @@ int plotEGReso(){//main
 
 	    }
 
+	    inputFile[ieta][ipu][oldIdx[iE]]->Close();
 
 	  }//loop on energies
 	  drawChi2(myc[2],p_chi2ndf);
@@ -1086,7 +1087,7 @@ int plotEGReso(){//main
 
 	  saveName.str("");
 	  saveName << plotDir << "/Ereco_eta" << eta[ieta];
-	  saveName << "_SR7" << "_IC" << ICval[ic];
+	  saveName << "_SR7" << "_IC" << ICval[ic] << "_try" << ip;
 	  mycEtot->Update();
 	  mycEtot->Print((saveName.str().c_str()+pSuffix)+".pdf");
 	    
@@ -1345,7 +1346,7 @@ int plotEGReso(){//main
       mycN->Print((lsave.str()+".pdf").c_str());
       mycN->Print((lsave.str()+".png").c_str());
       
-      
+
     }//loop on scenarios
     
   }//loop on versions
