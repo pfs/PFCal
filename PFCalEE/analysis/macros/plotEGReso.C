@@ -592,8 +592,8 @@ int plotEGReso(){//main
 
   const unsigned nPts = 1;
 
-  const unsigned nPu = 2;//4;
-  unsigned pu[nPu] = {0,0};//,140,200};
+  const unsigned nPu = 3;//4;
+  unsigned pu[nPu] = {0,0,0};//,140,200};
 
   const unsigned nS = 1;
   std::string scenario[nS] = {
@@ -870,7 +870,7 @@ int plotEGReso(){//main
 		  //if (iL==0) lName << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
 		  //else lName << "+" << absWeight(iL,etaval[ieta]) << "*SmearE(" << "subtractedenergy_" << iL << "_SR4," << ICval[ic] << "/100.*subtractedenergy_" << iL << "_SR4)";
 		  double fact = absWeight(iL,etaval[ieta]);
-		  if (ipu>0) fact = absWeight(iL,etaval[ieta])*smearFact[iL];
+		  if (ipu>1) fact = absWeight(iL,etaval[ieta])*smearFact[iL];
 		  if (iL==0) lName << fact << "*subtractedenergy_" << iL << "_SR4";
 		  else lName << "+" << fact << "*subtractedenergy_" << iL << "_SR4";
 		}
@@ -916,6 +916,28 @@ int plotEGReso(){//main
 	      lat.SetTextSize(0.06);
 	      lat.DrawLatexNDC(0.15,0.87,buf);
 	      if (iSR==4) lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
+
+	      if (iSR==7 && ipu>0){
+		mycEtot->cd(iE+1);
+		p_Ereco[iE][iSR]->SetLineColor(ipu+1);
+		p_Ereco[iE][iSR]->Draw(ipu==1?"":"same");
+		TF1 *fite = p_Ereco[iE][iSR]->GetFunction("fitResult");
+		fite->SetLineColor(ipu+1);
+		fite->Draw("same");
+		sprintf(buf,"#gamma E_{T}=%d GeV + PU %d",genEn[iE],pu[ipu]);
+		lat.SetTextSize(0.05);
+		lat.DrawLatexNDC(0.25,0.965,buf);
+		sprintf(buf,"#eta=%3.1f, IC %d %%",etaval[ieta],ICval[ic]);
+		lat.SetTextSize(0.06);
+		lat.DrawLatexNDC(0.15,0.87,buf);
+
+		sprintf(buf,"#sigma/E = %3.1f/%3.1f=%3.3f",fite->GetParameter(2),fite->GetParameter(1),fite->GetParameter(2)/fite->GetParameter(1));
+		lat.DrawLatexNDC(0.15,0.85-0.1*ipu,buf);
+  
+
+	      }
+
+
 	      p_chi2ndf[iSR]->Fill(lres.chi2/lres.ndf);
 
 	      //filter out bad points
@@ -946,12 +968,12 @@ int plotEGReso(){//main
 	    saveName.str("");
 	    saveName << plotDir << "/Ereco_eta" << eta[ieta] << "_pu" << puOption;
 	    if (ipu==0) saveName << "raw";
-	    saveName << "_E" << genEn[iE] << pSuffix;
+	    saveName << "_E" << genEn[iE] << "_IC" << ICval[ic];
 	    mycE[iE]->Update();
 	    mycE[iE]->Print((saveName.str().c_str()+pSuffix)+".pdf");
 	    
 	    //fill sigma PU for lower energies
-	    if (ipu>1 && genEn[iE]>5 && genEn[iE]<40) {
+	    if (ipu>2 && genEn[iE]>5 && genEn[iE]<40) {
 	      bool success = retrievePuSigma(ltree[ieta][1][oldIdx[iE]], ltree[ieta][ipu][oldIdx[iE]],
 					     p_sigma,
 					     p_subtrEvspuE,
@@ -966,7 +988,6 @@ int plotEGReso(){//main
 
 	  }//loop on energies
 	  drawChi2(myc[2],p_chi2ndf);
-
 
 	  //plot and fit calib
 	  for (unsigned iSR(0); iSR<nSR;++iSR){//loop on signal region
@@ -998,7 +1019,7 @@ int plotEGReso(){//main
 	  lsave << plotDir << "/";
 	  if (ipu==0) lsave << "CalibMipToGeV";
 	  else lsave << "Calib";
-	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix << "_IC" << ICval[ic];
 	  if (dovsE) lsave << "_vsE";
 	  myc[0]->Print((lsave.str()+".pdf").c_str());
 
@@ -1054,13 +1075,22 @@ int plotEGReso(){//main
 	  lsave << plotDir << "/";
 	  if (ipu==0) lsave << "ResoRaw";
 	  else lsave << "Reso";
-	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix;
+	  lsave << "_eta" << eta[ieta] << "_pu" << puOption << pSuffix << "_IC" << ICval[ic];
 	  if (dovsE) lsave << "_vsE";
 	  myc[1]->Print((lsave.str()+".pdf").c_str());
 
 
 
-	}//loop on pu
+	  }//loop on pu
+
+
+	  saveName.str("");
+	  saveName << plotDir << "/Ereco_eta" << eta[ieta];
+	  saveName << "_SR7" << "_IC" << ICval[ic];
+	  mycEtot->Update();
+	  mycEtot->Print((saveName.str().c_str()+pSuffix)+".pdf");
+	    
+
       }//loop on eta
 
       fout->Write();
@@ -1214,7 +1244,7 @@ int plotEGReso(){//main
 	  lat.DrawLatexNDC(0.01,0.01,"HGCAL G4 standalone");
 	  mycReso->Update();
 	  std::ostringstream lsave;
-	  lsave << plotDir << "/Resolution_pu" << pu[ipu] << "_SR" << iSR;
+	  lsave << plotDir << "/Resolution_pu" << pu[ipu] << "_SR" << iSR << "_IC" << ICval[ic];
 	  if (dovsE) lsave << "_vsE";
 	  mycReso->Print((lsave.str()+".pdf").c_str());
 	  mycReso->Print((lsave.str()+".C").c_str());

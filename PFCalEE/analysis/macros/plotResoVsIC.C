@@ -109,8 +109,8 @@ int plotResoVsIC(){
     gr[ic][0] = (TGraphErrors *)gDirectory->Get("resoRecoFit2eta21pu1");
     grCalib[ic][0] = (TGraphErrors *)gDirectory->Get("calibRecoDelta2eta21pu1");
     fcalib[ic][1]->cd("SR7");
-    gr[ic][1] = (TGraphErrors *)gDirectory->Get("resoRecoFit7eta21pu1");
-    grCalib[ic][1] = (TGraphErrors *)gDirectory->Get("calibRecoDelta7eta21pu1");
+    gr[ic][1] = (TGraphErrors *)gDirectory->Get("resoRecoFit7eta21pu2");
+    grCalib[ic][1] = (TGraphErrors *)gDirectory->Get("calibRecoDelta7eta21pu2");
 
 
     TF1 *fit = gr[ic][0]->GetFunction("reso");

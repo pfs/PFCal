@@ -55,7 +55,8 @@ EXES=$(wildcard $(BASEDIR)/test/*.cpp)
 OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(subst $(TESTDIR), $(EXEDIR),$(subst .$(TEST_EXT),,$(EXES)))
 
-BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/plotHadronMomentum 
+#BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/plotHadronMomentum 
+BINS=$(EXEDIR)/maxChargeStudy
 
 #BINS=$(EXEDIR)/MixPUSignal $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 #BINS=$(EXEDIR)/plotMomentum $(EXEDIR)/mipStudy $(EXEDIR)/mipProfile $(EXEDIR)/mipSelection
@@ -75,6 +76,9 @@ $(SUBDIRS):
 
 #$(EXEDIR)/%:  $(TESTDIR)/%.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 #	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
+
+$(EXEDIR)/maxChargeStudy:  $(TESTDIR)/maxChargeStudy.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
+	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
 
 $(EXEDIR)/MixPUSignal:  $(TESTDIR)/MixPUSignal.cpp $(LIBDIR)/lib$(LIBNAME).so $(wildcard $(BASEDIR)/include/*.h*)
 	$(CXX) -o $@ $(CXXFLAGS) $< $(LIBS) -L$(LIBDIR) -l$(LIBNAME)
