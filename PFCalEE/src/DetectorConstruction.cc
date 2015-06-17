@@ -68,68 +68,88 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	G4double airThick = 3*mm;
 	G4double pcbThick = 2*mm;
 
-	std::vector<G4double> lThickL;
-	std::vector<std::string> lEleL;
-	lThickL.push_back(2.*mm);lEleL.push_back("Al");
-	lThickL.push_back(26.*mm);lEleL.push_back("Foam");
-	lThickL.push_back(2.*mm);lEleL.push_back("Al");
-	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(2.0*mm);lEleL.push_back("W");
-	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(airThick);lEleL.push_back("Air");
-	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  std::vector<G4double> lThickL;
+  std::vector<std::string> lEleL;
+  // Moderator
+  lThickL.push_back(180*mm);lEleL.push_back("NeutMod");
+  // Thermal insulator
+  lThickL.push_back(2.*mm);lEleL.push_back("Al");
+  lThickL.push_back(26.*mm);lEleL.push_back("Foam");
+  lThickL.push_back(2.*mm);lEleL.push_back("Al");
+  // Pre-shower
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
 
-	std::vector<G4double> lThickR;
-	std::vector<std::string> lEleR;
-	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
-	lThickR.push_back(6*mm);lEleR.push_back("Cu");
-	lThickR.push_back(0.6*mm);lEleR.push_back("WCu");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(0.1*mm);lEleR.push_back("Si");
-	lThickR.push_back(pcbThick);lEleR.push_back("PCB");
-	lThickR.push_back(airThick);lEleR.push_back("Air");
+  lThickL.clear();
+  lEleL.clear();
+  unsigned nFEModsNom = 5;
+  unsigned nFEModsSub = 0;
+  unsigned nFEModsNet = nFEModsNom - nFEModsSub;
+  double rScale = ((double) nFEModsNom )/((double) nFEModsNet);
+  // Front module
+  lThickL.push_back(0.5*mm*rScale);lEleL.push_back("Cu");
+  lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
+  lThickL.push_back(2.0*mm*rScale);lEleL.push_back("W");
+  lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
+  lThickL.push_back(0.5*mm*rScale);lEleL.push_back("Cu");
+  lThickL.push_back(airThick);lEleL.push_back("Air");
+  lThickL.push_back(pcbThick);lEleL.push_back("PCB");
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
+  lThickL.push_back(0.1*mm);lEleL.push_back("Si");
 
-	m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+  std::vector<G4double> lThickR;
+  std::vector<std::string> lEleR;
+  // Rear module
+  lThickR.push_back(0.6*mm*rScale);lEleR.push_back("WCu");
+  lThickR.push_back(6*mm*rScale);lEleR.push_back("Cu");
+  lThickR.push_back(0.6*mm*rScale);lEleR.push_back("WCu");
+  lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+  lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+  lThickR.push_back(0.1*mm);lEleR.push_back("Si");
+  lThickR.push_back(pcbThick);lEleR.push_back("PCB");
+  lThickR.push_back(airThick);lEleR.push_back("Air");
 
-	lThickL.clear();
-	lEleL.clear();
-	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(2.0*mm);lEleL.push_back("W");
-	lThickL.push_back(0.5*mm);lEleL.push_back("CFMix");
-	lThickL.push_back(0.5*mm);lEleL.push_back("Cu");
-	lThickL.push_back(airThick);lEleL.push_back("Air");
-	lThickL.push_back(pcbThick);lEleL.push_back("PCB");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	lThickL.push_back(0.1*mm);lEleL.push_back("Si");
-	for(unsigned i=0; i<4; i++) {
-	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	}
+  // Forward EE
+  for(unsigned i=0; i<nFEModsNet; i++) {
+    m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+    m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+  }
 
-	lThickL[2] = 2.8*mm;
-	lThickR[0] = 1.2*mm;
-	lThickR[2] = 1.2*mm;
-	for(unsigned i=0; i<5; i++) {
-	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	}
+  // Middle EE
+  unsigned nMEModsNom = 5;
+  unsigned nMEModsSub = 0;
+  unsigned nMEModsNet = nMEModsNom - nMEModsSub;
+  rScale = ((double) nMEModsNom)/((double) nMEModsNet);
+  lThickL[0] = 0.5*mm*rScale;
+  lThickL[2] = 2.8*mm*rScale;//new
+  lThickL[4] = 0.5*mm*rScale;
+  lThickR[0] = 1.2*mm*rScale;//new
+  lThickR[1] = 6.0*mm*rScale;
+  lThickR[2] = 1.2*mm*rScale;//new
+  for(unsigned i=0; i<nMEModsNet; i++) {
+    m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+    m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+  }
 
-	lThickL[2] = 4.2*mm;
-	lThickR[0] = 2.2*mm;
-	lThickR[2] = 2.2*mm;
-	for(unsigned i=0; i<4; i++) {
-	  m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
-	  if (i==3) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
-	  m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
-	}
+  // Back EE
+  unsigned nBEModsNom = 4;
+  unsigned nBEModsSub = 1;
+  unsigned nBEModsNet = nBEModsNom - nBEModsSub;
+  rScale = ((double) nBEModsNom)/((double) nBEModsNet);
+  lThickL[0] = 0.5*mm*rScale;
+  lThickL[2] = 4.2*mm*rScale;//new
+  lThickL[4] = 0.5*mm*rScale;
+  lThickR[0] = 2.2*mm*rScale;//new
+  lThickR[1] = 6.0*mm*rScale;
+  lThickR[2] = 2.2*mm*rScale;//new
+  for(unsigned i=0; i<nBEModsNet; i++) {
+    m_caloStruct.push_back( SamplingSection(lThickL,lEleL) );
+    if (i==(nBEModsNet-1)) {lThickR.push_back(0.5*mm);lEleR.push_back("Cu");}
+    m_caloStruct.push_back( SamplingSection(lThickR,lEleR) );
+  }  
 	
 	if(version_==v_HGCAL_v6){
 	  //add HCAL
