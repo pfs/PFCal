@@ -104,7 +104,7 @@ public:
       indices_[0] = 0;
       indices_[1] = 10;
       indices_[2] = 20;
-      indices_[3] = 28;
+      indices_[3] = 29; // For Si pre-shower
       indices_[4] = indices_[3];
       indices_[5] = indices_[3];
       indices_[6] = indices_[3];
