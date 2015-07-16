@@ -64,7 +64,7 @@ int getNoise(){//main
 
   const unsigned nEvts = 1500;
   const unsigned nEE = 100*100;//1*1 m^2
-  const unsigned nFH = 100*100*12;
+  const unsigned nFH = 100*100*9;
   const unsigned nBH = 50*50*12;
 
   const double sigSi = 0.14;

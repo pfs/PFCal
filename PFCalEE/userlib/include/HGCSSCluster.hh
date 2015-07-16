@@ -121,6 +121,7 @@ public:
   void calculatePosition();
 
   void calculateDirection();
+  void calculateDirection(const std::vector<unsigned> & lToRemove);
 
 
   void Print(std::ostream & aOs) const;

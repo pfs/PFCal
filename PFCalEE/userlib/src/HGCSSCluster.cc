@@ -53,10 +53,15 @@ void HGCSSCluster::calculatePosition(){
 }
 
 void HGCSSCluster::calculateDirection(){
+  std::vector<unsigned> lToRemove;
+  calculateDirection(lToRemove);
+}
+
+void HGCSSCluster::calculateDirection(const std::vector<unsigned> & lToRemove){
 
   //get shower position and direction
   PCAShowerAnalysis pcaShowerAnalysis = PCAShowerAnalysis();
-  pcaShowerAnalysis.showerParameters(*this);
+  pcaShowerAnalysis.showerParameters(*this,lToRemove);
   pos_ = pcaShowerAnalysis.showerBarycenter;
   dir_ = pcaShowerAnalysis.showerAxis;
   

@@ -32,8 +32,8 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 enlist=[0]
 #if opt.dogun : enlist=[3,5,7,10,20,30,40,50,60,70,80,90,100,125,150,175,200]
 if opt.dogun : 
-    #enlist=[16,82,160]
-    enlist=[3,5,10,30,50,70,100,200]
+    enlist=[1,2,3,4,5,6,7,8,9,10,12,14,16,18,20]
+    #enlist=[3,5,10,30,50,70,100,200]
 
 #if opt.dogun : enlist=[2,5,10,20,40,60,80,100,150,200]#,300,400,500]
 

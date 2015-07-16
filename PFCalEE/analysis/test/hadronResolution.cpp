@@ -791,9 +791,9 @@ int main(int argc, char** argv){//main
          inputsim << filePath << "/" << simHeader << genEn[iGen] << simAppend << "_run" << i << ".root";
          inputrec.str("");
          inputrec << filePath << "/" << recHeader << genEn[iGen] << recAppend << "_run" << i << ".root";
-         if (!testInputFile(inputsim.str(),simFile)) return 1;
+         if (!testInputFile(inputsim.str(),simFile)) continue;
          lSimTree->AddFile(inputsim.str().c_str());
-         if (!testInputFile(inputrec.str(),recFile)) return 1;
+         if (!testInputFile(inputrec.str(),recFile)) continue;
          lRecTree->AddFile(inputrec.str().c_str());
        }
      }

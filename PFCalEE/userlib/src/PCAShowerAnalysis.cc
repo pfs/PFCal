@@ -18,7 +18,7 @@ PCAShowerAnalysis::PCAShowerAnalysis ( bool segmented,
 
   // minimal rechit value
   mip_ = 0.000055;//40;
-  entryz_ = 320.38;
+  entryz_ = 320.87;
   debug_=false;
 }
 
@@ -28,6 +28,13 @@ PCAShowerAnalysis::~PCAShowerAnalysis ()
 }
 
 void PCAShowerAnalysis::showerParameters(const HGCSSCluster & clus)
+{
+  std::vector<unsigned> lToRemove;
+  showerParameters(clus,lToRemove);
+}
+
+void PCAShowerAnalysis::showerParameters(const HGCSSCluster & clus,
+					 const std::vector<unsigned> & lToRemove)
 {
 
   if (!alreadyfilled_) {
@@ -44,6 +51,15 @@ void PCAShowerAnalysis::showerParameters(const HGCSSCluster & clus)
 	if (debug_) std::cout << " Hit " << myhit << " not found..." << std::endl;
 	continue;
       }
+      unsigned layer = myhit->layer();
+      bool keep = true;
+      for (unsigned ir(0); ir<lToRemove.size();++ir){
+	if (layer==lToRemove[ir]) {
+	  keep = false;
+	  break;
+	}
+      }
+      if (!keep) continue;
       ROOT::Math::XYZPoint cellPos(myhit->position());
       double en = myhit->energy();
       variables[0] = cellPos.x(); 
@@ -55,7 +71,7 @@ void PCAShowerAnalysis::showerParameters(const HGCSSCluster & clus)
 	for (int i=0; i<int(en); i++) principal_->AddRow(variables); 
       } else {
 	// a log-weighting, energy not in fraction of total
-	double w0 = -log(20.); // threshold, could use here JB's thresholds
+	double w0 = -log(10.); // threshold, could use here JB's thresholds
 	double scale = 250.; // to scale the weight so to get ~same nbr of points as for E-weight 
 	                     //  for the highest hit of ~0.1 GeV
 	int nhit = int(scale*(w0+log(en)));
@@ -65,7 +81,7 @@ void PCAShowerAnalysis::showerParameters(const HGCSSCluster & clus)
       counter++;
       //if (debug_) std::cout << " - hit added n=" << counter << std::endl;
     }
-    if (counter!=lmap.size()) std::cout << " -- Warning, not all hits found for making principals ! Found " << counter << " out of " << lmap.size() << std::endl;
+    if (lToRemove.size()==0 && counter!=lmap.size()) std::cout << " -- Warning, not all hits found for making principals ! Found " << counter << " out of " << lmap.size() << std::endl;
   }
 
 

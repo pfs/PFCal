@@ -178,8 +178,8 @@ unsigned fitEnergy(TH1F *hist,
   hist->Draw("PE");
 
 
-  double nRMSm = 2;//1.5;//isr<1? 1 : 2;
-  double nRMSp = 2;//1.5;
+  double nRMSm = 1.5;//isr<1? 1 : 2;
+  double nRMSp = 1.5;
   
   TF1 *fitResult = new TF1("fitResult","[0]*TMath::Gaus(x,[1],[2],0)",hist->GetXaxis()->GetXmin(),hist->GetXaxis()->GetXmax());
   fitResult->SetParameters(hist->Integral(),
@@ -535,6 +535,12 @@ bool plotResolution(TGraphErrors *gr,TPad *pad,
   fitFunc->SetLineColor(6);
   fitFunc->Draw("same");
 
+  TF1 *fitRef =new TF1("resoRef","sqrt([0]*[0]/x+[1]*[1]+[2]*[2]/(x*x))",gr->GetXaxis()->GetXmin(),gr->GetXaxis()->GetXmax());
+
+  fitRef->SetParameters(0.73,0.029,0.13);
+  fitRef->SetLineColor(7);
+  fitRef->Draw("same");
+
   stoch = fitFunc->GetParameter(0);
   stochErr = fitFunc->GetParError(0);
   constant = fitFunc->GetParameter(1);
@@ -585,7 +591,43 @@ double HoverEcor(const double & ee,
   double par0 = 30;
   double par1 = 5.31;
 
-  if (model==28){
+  if (model==2812){
+    ECALslope = 93.49;
+    ECALoffset = -5;
+    FHtoEslope = 22.85;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 4.23;
+    BHtoEoffset = 0;//-34.5;
+    BHoverFH = 1.49;
+    par0 = 35;
+    par1 = 4.61;
+    HoverE = 4.57;
+  }
+  else if (model==2411){
+    ECALslope = 81.64;
+    ECALoffset = 2.5;
+    FHtoEslope = 22.5;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 5;
+    BHtoEoffset = 0;//-34.5;
+    BHoverFH = 1.22;
+    par0 = 36;
+    par1 = 4.15;
+    HoverE = 4.07;
+  }
+  else if (model==1809){
+    ECALslope = 66.14;
+    ECALoffset = 41;
+    FHtoEslope = 18.4;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 5;
+    BHtoEoffset = 0;//-34.5;
+    BHoverFH = 0.99;
+    par0 = 45;
+    par1 = 4.15;
+    HoverE = 4.1;
+  }
+   else if (model==28){
     ECALslope = 92.41;
     ECALoffset = 23;
     par0 = 33;
@@ -604,12 +646,12 @@ double HoverEcor(const double & ee,
   else if (model==18){
     ECALslope = 92.26;
     ECALoffset = 6;
-    par0 = 41;//38;
-    par1 = 5.67;//5.34;
+    par0 = 49;//38;
+    par1 = 5.85;//5.34;
     FHtoEslope = 19.08;
     FHtoEoffset = -44;
-    BHoverFH = 1.44;
-    HoverE = 5.68;
+    BHoverFH = 1.30;
+    HoverE = 5.80;
   }
 
   double eecal = (ee-ECALoffset)/ECALslope;
@@ -634,10 +676,10 @@ int plotPionResoFinal(){//main
 
   bool dovsE = true;
 
-  const unsigned tpmod = 18;
+  const unsigned tpmod = 2812;
   std::ostringstream model;
-  //if (tpmod>0) model << "_tp" << tpmod << "even";
-  if (tpmod>0) model << "_ecal" << tpmod;
+  if (tpmod>0) model << "_tp" << tpmod ;//<< "uni";
+  //if (tpmod>0) model << "_ecal" << tpmod;
 
   const unsigned nRemove = 1;
   std::vector<unsigned> lToRemove;
@@ -665,7 +707,7 @@ int plotPionResoFinal(){//main
 
 
   const unsigned nV = 1;
-  TString version[nV] = {"25"};//,"0"};
+  TString version[nV] = {"33"};//,"0"};
   
   const unsigned nLayers = 54;
 
@@ -757,7 +799,7 @@ int plotPionResoFinal(){//main
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 	
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV04-02-02/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV05-02-04/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][nLayers][nSR];
 	

@@ -51,7 +51,7 @@ int plotResovsRemove(){
   double ds[3][nRemove];
   double dc[3][nRemove];
 
-  const unsigned nCanvas = 1;//nRemove;  
+  const unsigned nCanvas = 2;//nRemove;  
   TCanvas *mycC[nCanvas];
   TCanvas *mycR[nCanvas];
   TCanvas *mycS[nCanvas];
@@ -59,24 +59,26 @@ int plotResovsRemove(){
   for (unsigned iC(0);iC<nCanvas;++iC){
     std::ostringstream lName;
     lName << "mycC" << iC;
-    mycC[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
-    mycC[iC]->Divide(2,2);
+    if (iC<1) mycC[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    if (iC<1) mycC[iC]->Divide(2,2);
     lName.str("");
     lName << "mycR" << iC;
-    mycR[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    if (iC<1) mycR[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
     lName.str("");
     lName << "mycF" << iC;
     mycF[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
     lName.str("");
     lName << "mycS" << iC;
-    mycS[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
-    mycS[iC]->Divide(2,2);
+    if (iC<1) mycS[iC] = new TCanvas(lName.str().c_str(),lName.str().c_str(),1500,1000);
+    if (iC<1) mycS[iC]->Divide(2,2);
   }
 
   TLegend *leg = new TLegend(0.85,0.42,0.99,0.99);
   leg->SetFillColor(10);
   TLegend *legF = new TLegend(0.85,0.42,0.99,0.99);
   legF->SetFillColor(10);
+  TLegend *legFR = new TLegend(0.85,0.62,0.99,0.99);
+  legFR->SetFillColor(10);
 
   TFile *fin[nRemove];
   bool first = true;
@@ -212,9 +214,9 @@ int plotResovsRemove(){
   mycR[0]->cd();
 
   TFile *fref[3];
-  fref[0] = TFile::Open("PLOTS/CalibReso_eta21_vsE_IC3_TP28.root");
-  fref[1] = TFile::Open("PLOTS/CalibReso_eta21_vsE_IC3_TP24.root");
-  fref[2] = TFile::Open("PLOTS/CalibReso_eta21_vsE_IC3_TP18.root");
+  fref[0] = TFile::Open("PLOTS/CalibReso_eta16_vsE_IC3_TP28.root");
+  fref[1] = TFile::Open("PLOTS/CalibReso_eta16_vsE_IC3_TP24.root");
+  fref[2] = TFile::Open("PLOTS/CalibReso_eta16_vsE_IC3_TP18.root");
   TGraphErrors *grRef[3];
   TF1 *fittp[3];
   std::ostringstream lname;
@@ -223,7 +225,7 @@ int plotResovsRemove(){
     lname << "SR" << SR;
     fref[ir]->cd(lname.str().c_str());
     lname.str("");
-    lname << "resoRecoFit" << SR << "eta21pu1";
+    lname << "resoRecoFit" << SR << "eta16pu1";
     grRef[ir] = (TGraphErrors*)gDirectory->Get(lname.str().c_str());
     grRef[ir]->SetMarkerStyle(2+ir);
     grRef[ir]->SetMarkerColor(6);
@@ -287,6 +289,79 @@ int plotResovsRemove(){
   save.str("");
   save << "PLOTS/RemoveScenarios_Resolution_final.pdf";
   mycF[0]->Print(save.str().c_str());
+
+
+  mycF[1]->cd();
+  gPad->SetLogx(1);
+  gPad->SetGridy(1);
+  grRes[0][30]->GetXaxis()->SetRangeUser(0,2000);
+  TGraphErrors* grRatios[4];
+  grRatios[0] = (TGraphErrors*)grRes[0][30]->Clone("grRatio_30_28");
+  grRatios[1] = (TGraphErrors*)grRes[2][30]->Clone("grRatio_28_28");
+  grRatios[2] = (TGraphErrors*)grRes[5][30]->Clone("grRatio_25_28");
+  grRatios[3] = (TGraphErrors*)grRes[12][12]->Clone("grRatio_18_28");
+  grRatios[0]->SetMarkerColor(kGray);
+  grRatios[0]->SetLineColor(kGray);
+  grRatios[0]->SetMarkerStyle(20);
+  grRatios[1]->SetMarkerColor(1);
+  grRatios[1]->SetLineColor(1);
+  grRatios[1]->SetMarkerStyle(20);
+  grRatios[2]->SetMarkerColor(2);
+  grRatios[2]->SetLineColor(2);
+  grRatios[2]->SetMarkerStyle(21);
+  grRatios[3]->SetMarkerColor(4);
+  grRatios[3]->SetLineColor(4);
+  grRatios[3]->SetMarkerStyle(22);
+  grRatios[0]->SetTitle(";E^{GEN}_{#gamma};(#sigma/#mu)/(#sigma/#mu)_{28}");
+  for (unsigned iP(0); iP<grRes[2][30]->GetN();++iP){
+    double xn,yn,xd,yd;
+    double yne = grRes[0][30]->GetErrorY(iP);
+    double yde = grRes[2][30]->GetErrorY(iP);
+    grRes[0][30]->GetPoint(iP,xn,yn);
+    grRes[2][30]->GetPoint(iP,xd,yd);
+    double err = yn/yd*sqrt(pow(yne/yn,2)+pow(yde/yd,2));
+    grRatios[0]->SetPoint(iP,xn,yn/yd);
+    grRatios[0]->SetPointError(iP,0,err);
+
+    std::cout << iP << " 30 " << yn/yd << " " << err << std::endl;
+
+    grRes[2][30]->GetPoint(iP,xn,yn);
+    yne = grRes[2][30]->GetErrorY(iP);
+    err = yn/yd*sqrt(pow(yne/yn,2)+pow(yde/yd,2));
+    grRatios[1]->SetPoint(iP,xn,yn/yd);
+    grRatios[1]->SetPointError(iP,0,err);
+    std::cout << iP << " 28 " << yn/yd << " " << err << std::endl;
+
+    grRes[5][30]->GetPoint(iP,xn,yn);
+    yne = grRes[5][30]->GetErrorY(iP);
+    err = yn/yd*sqrt(pow(yne/yn,2)+pow(yde/yd,2));
+    grRatios[2]->SetPoint(iP,xn,yn/yd);
+    grRatios[2]->SetPointError(iP,0,err);
+    std::cout << iP << " 25 " << yn/yd << " " << err << std::endl;
+
+    grRes[12][12]->GetPoint(iP,xn,yn);
+    yne = grRes[12][12]->GetErrorY(iP);
+    err = yn/yd*sqrt(pow(yne/yn,2)+pow(yde/yd,2));
+    grRatios[3]->SetPoint(iP,xn,yn/yd);
+    grRatios[3]->SetPointError(iP,0,err);
+    std::cout << iP << " 18 " << yn/yd << " " << err << std::endl;
+  }
+
+  grRatios[0]->GetYaxis()->SetRangeUser(0.75,1.5);
+  grRatios[0]->Draw("APE");
+  grRatios[1]->Draw("PE");
+  grRatios[2]->Draw("PE");
+  grRatios[3]->Draw("PE");
+  legFR->AddEntry(grRatios[0],"CMSSW-30/28","P");
+  legFR->AddEntry(grRatios[1],"CMSSW-28/28","P");
+  legFR->AddEntry(grRatios[2],"CMSSW-25/28","P");
+  legFR->AddEntry(grRatios[3],"CMSSW-18/28","P");
+  legFR->Draw("same");
+
+  mycF[1]->Update();
+  save.str("");
+  save << "PLOTS/RemoveScenarios_ResolutionRatios_final.pdf";
+  mycF[1]->Print(save.str().c_str());
 
 
 

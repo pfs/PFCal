@@ -206,8 +206,9 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     absweight_.reserve(nLayers_);
     std::cout << " -- Absorber weights used for total energy:" << std::endl;
     for(unsigned iL(0); iL<nLayers_; iL++){
-      double w = absWeight(iL);
+      //double w = absWeight(iL);
       //double w = ssvec[iL].volX0trans()/ssvec[1].volX0trans();
+      double w = ssvec[iL].voldEdx()/ssvec[1].voldEdx();
       std::cout << " - Layer " << iL << " w=" << w << std::endl;
       absweight_.push_back(w);
     }
@@ -294,7 +295,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
     double etacor = fabs(1./tanh(leta));
 
     totalE_ += energy;
-    wgttotalE_ += energy*absweight_[layer]*etacor;    
+    wgttotalE_ += energy*absweight_[layer];//*etacor;    
     
     double lradius = sqrt(pow(posx,2)+pow(posy,2));
     double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);

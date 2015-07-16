@@ -40,6 +40,9 @@ struct FitResult{
   bool found;
   FitResult():pos_x(0),pos_y(0),pos_z(0),tanangle_x(0),tanangle_y(0),found(false)
   {};
+  void Print() const{
+    std::cout << " found = " << found << " tanangles = " << tanangle_x << " " << tanangle_y << " pos " << pos_x << " " << pos_y << " " << pos_z << std::endl;
+  };
 };
 
 struct Direction{
@@ -68,8 +71,8 @@ struct Direction{
   double GetY(double posz,double vtx_y, double vtxz)const{
     return vtx_y+tanangle_y*(posz-vtxz);
   };
-  ROOT::Math::XYZPoint GetPosFF(const ROOT::Math::XYZPoint & vtx)const{
-    double zposFF = 3173.9;
+  ROOT::Math::XYZPoint GetPosFF(const ROOT::Math::XYZPoint & vtx, const double & z0)const{
+    double zposFF = z0;
     return ROOT::Math::XYZPoint(GetX(zposFF,vtx.x(),vtx.z()),GetY(zposFF,vtx.y(),vtx.z()),zposFF);
   };
   void Print() const{
@@ -130,6 +133,13 @@ public:
 			  unsigned & nTooFar,
 			  unsigned & nNoCluster);
 
+  bool getInitialPosition(const unsigned ievt,
+			  const unsigned nVtx, 
+			  std::vector<HGCSSRecoHit> *rechitvec,
+			  unsigned & nTooFar,
+			  unsigned & nNoCluster,
+			  const std::vector<unsigned> & lToRemove);
+
   bool getGlobalMaximum(const unsigned ievt, 
 			const unsigned nVtx, 
 			std::vector<HGCSSRecoHit> *rechitvec, 
@@ -148,7 +158,12 @@ public:
 
   void getMaximumCellFromGeom(const double & phimax,const double & etamax,const ROOT::Math::XYZPoint & cluspos,std::vector<double> & xmax,std::vector<double> & ymax);
 
-  void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,const ROOT::Math::XYZPoint & cluspos,std::vector<double> & xmax,std::vector<double> & ymax);
+  void getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,
+		      const ROOT::Math::XYZPoint & clusPos, 
+		      const Direction & clusDir, 
+		      //const double & phimax,const double & etamax,
+		      //const ROOT::Math::XYZPoint & cluspos,
+		      std::vector<double> & xmax,std::vector<double> & ymax);
 
   void getEnergyWeightedPosition(std::vector<HGCSSRecoHit> *rechitvec,
 				 const unsigned nPU, 
@@ -249,6 +264,11 @@ public:
 			       truthDir_.GetY(avgZ_[iL],truthVtx_.y(),truthVtx_.z()));
 
   };
+  inline ROOT::Math::XYPoint clusPos(const unsigned iL) const{
+    return ROOT::Math::XYPoint(clusDir_.GetX(avgZ_[iL],clusPos_.x(),clusPos_.z()),
+			       clusDir_.GetY(avgZ_[iL],clusPos_.y(),clusPos_.z()));
+
+  };
   inline std::vector<std::vector<double> > getEnergyArray() const{
     return Exy_;
   };
@@ -294,9 +314,11 @@ private:
   TMatrixD matrix_[2];
   TMatrixD corrMatrix_[2];
 
+  Direction clusDir_;
   Direction recoDir_;
   Direction truthDir_;
   ROOT::Math::XYZPoint truthVtx_;
+  ROOT::Math::XYZPoint clusPos_;
 
   unsigned nInvalidFits_;
   unsigned nFailedFitsAfterCut_;
@@ -312,15 +334,17 @@ private:
   TTree *outtreeFit_;
   //output tree
   unsigned nRemove_;
+  unsigned nLayersFit_;
   double truthE_;
-  double truthX0_;
-  double truthY0_;
+  double truthX14_;
+  double truthY14_;
   double truthEta_;
   double truthPhi_;
   double recoEta_;
   double recoPhi_;
   double showerX14_;
   double showerY14_;
+  double showerZ14_;
   double pcaEta_;
   double pcaPhi_;
   double pcaX_;

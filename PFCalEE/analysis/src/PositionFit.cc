@@ -282,7 +282,7 @@ void PositionFit::initialiseClusterHistograms(){
      lName.str("");
      lName << "p_dRmin_" << iL;
      p_dRmin[iL] = new TH1F(lName.str().c_str(),";dRmin;events",
-			    100,0,1);
+			    100,0,50);
 
      lName.str("");
      lName << "p_diffXpos_" << iL;
@@ -335,25 +335,27 @@ void PositionFit::initialiseClusterHistograms(){
    if (saveEtree_){
      outtreeFit_ = new TTree("PosFit","Tree to save fit results");
      outtreeFit_->Branch("nRemove",&nRemove_);
+     outtreeFit_->Branch("nLayersFit",&nLayersFit_);
      outtreeFit_->Branch("truthE",&truthE_);
      outtreeFit_->Branch("truthEta",&truthEta_);
      outtreeFit_->Branch("truthPhi",&truthPhi_);
-     outtreeFit_->Branch("truthX0",&truthX0_);
-     outtreeFit_->Branch("truthY0",&truthY0_);
+     outtreeFit_->Branch("truthX14",&truthX14_);
+     outtreeFit_->Branch("truthY14",&truthY14_);
      outtreeFit_->Branch("recoEta",&recoEta_);
      outtreeFit_->Branch("recoPhi",&recoPhi_);
      outtreeFit_->Branch("showerX14",&showerX14_);
      outtreeFit_->Branch("showerY14",&showerY14_);
+     outtreeFit_->Branch("showerZ14",&showerZ14_);
    }
    //check if already defined
    if (!p_chi2[0]){
 
-     p_recoXvsLayer = new TH2F("p_recoXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
+     p_recoXvsLayer = new TH2F("p_recoXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
      p_recoYvsLayer = new TH2F("p_recoYvsLayer",";layer;weighted y (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
      p_recoZvsLayer = new TH2F("p_recoZvsLayer",";layer;avg z (mm);n_{events}",nLayers_,0,nLayers_,3000,3170,3470);
-     p_truthXvsLayer = new TH2F("p_truthXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
+     p_truthXvsLayer = new TH2F("p_truthXvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
      p_truthYvsLayer = new TH2F("p_truthYvsLayer",";layer;weighted x (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
-     p_fitXvsLayer = new TH2F("p_fitXvsLayer",";layer;fit x (mm);n_{events}",nLayers_,0,nLayers_,200,-100,100);
+     p_fitXvsLayer = new TH2F("p_fitXvsLayer",";layer;fit x (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
      p_fitYvsLayer = new TH2F("p_fitYvsLayer",";layer;fit y (mm);n_{events}",nLayers_,0,nLayers_,1200,300,1500);
      p_nLayersFit = new TH1F("p_nLayersFit",";#layers in fit;n_{events}",31,-0.5,30.5);
 
@@ -389,8 +391,8 @@ void PositionFit::initialiseClusterHistograms(){
      p_angleY_residual = new TH1F("p_angleY_residual",";residual y direction angle (rad);n_{events}",200,-0.1,0.1);
 
      p_eta_reco = new TH1F("p_eta_reco",";reco #eta;n_{events}",200,1.4,3.0);
-     p_phi_reco = new TH1F("p_phi_reco",";reco #phi (rad);n_{events}",200,1.4,3);
-     p_eta_truth = new TH1F("p_eta_truth",";truth #eta;n_{events}",200,-3.1416,3.1416);
+     p_phi_reco = new TH1F("p_phi_reco",";reco #phi (rad);n_{events}",200,0,3.1416);
+     p_eta_truth = new TH1F("p_eta_truth",";truth #eta;n_{events}",200,1.4,3);
      p_phi_truth = new TH1F("p_phi_truth",";truth #phi (rad);n_{events}",200,-3.1416,3.1416);
      p_eta_residual = new TH1F("p_eta_residual",";residual #eta;n_{events}",200,-0.1,0.1);
      p_phi_residual = new TH1F("p_phi_residual",";residual #phi (rad);n_{events}",200,-0.1,0.1);
@@ -611,15 +613,19 @@ void PositionFit::initialiseClusterHistograms(){
        truthVtx_ = ROOT::Math::XYZPoint(xvtx,yvtx,zvtx);
        //in GeV
        truthE_ = (*genvec)[iP].E()/1000.;
-       if (debug_) 
+       if (debug_) {
 	 std::cout << " Found truth vertex pos at: x=" 
 		   << xvtx << ", y" << yvtx << ", z=" << zvtx 
-		   << " x,ypos was (expected): " 
+		   << " x,y,zpos was (expected): " 
 		   << (*genvec)[iP].x() 
 		   << " (" << truthPos(0).X() << ") " 
 		   << (*genvec)[iP].y() 
 		   << " (" << truthPos(0).Y() << ") "
+		   << (*genvec)[iP].z() 
+		   << " (" << avgZ_[0] << ") "
 		   << std::endl;
+       truthDir_.Print();
+       }
 
        p_genvtx_z->Fill(zvtx);
 
@@ -901,6 +907,21 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
 				     std::vector<HGCSSRecoHit> *rechitvec,
 				     unsigned & nTooFar,
 				     unsigned & nNoCluster){
+  std::vector<unsigned> lToRemove;
+  return getInitialPosition(ievt,
+			    nPuVtx, 
+			    rechitvec,
+			    nTooFar,
+			    nNoCluster,
+			    lToRemove);
+}
+
+bool PositionFit::getInitialPosition(const unsigned ievt,
+				     const unsigned nPuVtx, 
+				     std::vector<HGCSSRecoHit> *rechitvec,
+				     unsigned & nTooFar,
+				     unsigned & nNoCluster,
+				     const std::vector<unsigned> & lToRemove){
   
   if (saveEtree_) {
     for (unsigned iL(0);iL<nLayers_;++iL){
@@ -931,7 +952,7 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
   unsigned clusIdx = 0;
   for (unsigned iClus(0); iClus<nClusters;++iClus){
     HGCSSCluster & lCluster = lClusVec[iClus];
-    lCluster.calculateDirection();
+    lCluster.calculateDirection(lToRemove);
     //lCluster.setVertex(truthVtx_);
     double leta = lCluster.direction().eta();
     double lphi = lCluster.direction().phi();
@@ -958,10 +979,15 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
   }
   
   const HGCSSCluster & lCluster = lClusVec[clusIdx];
-  //pcaPhi_ = lCluster.direction().phi();//getSeedPhi();
-  //pcaEta_ = lCluster.direction().eta();//getSeedEta();
-  pcaPhi_ = truthPhi_;
-  pcaEta_ = truthEta_;
+  pcaPhi_ = lCluster.direction().phi();//getSeedPhi();
+  pcaEta_ = lCluster.direction().eta();//getSeedEta();
+  //pcaPhi_ = truthPhi_;
+  //pcaEta_ = truthEta_;
+
+  clusPos_ = lCluster.position()*10;
+  clusDir_ = Direction(lCluster.direction().x()/lCluster.direction().z(),lCluster.direction().y()/lCluster.direction().z());
+  //clusPos_ = truthVtx_;
+  //clusDir_ = truthDir_;
 
   pcaX_ = lCluster.position().x()*10;//in mm
   pcaY_ = lCluster.position().y()*10;
@@ -996,7 +1022,7 @@ bool PositionFit::getInitialPosition(const unsigned ievt,
   std::vector<double> ymax;
   ymax.resize(nLayers_,0);
   //getMaximumCellFromGeom(pcaPhi_,pcaEta_,lCluster.position(),xmax,ymax);
-  getMaximumCell(rechitvec,pcaPhi_,pcaEta_,lCluster.position(),xmax,ymax);
+  getMaximumCell(rechitvec,clusPos_,clusDir_,xmax,ymax);
   p_yvsx_max->Fill(xmax[10],ymax[10]);
   
   //get PU contrib from elsewhere in the event
@@ -1093,10 +1119,13 @@ void PositionFit::getMaximumCellFromGeom(const double & phimax,const double & et
 
 }
 
-void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const double & phimax,const double & etamax,const ROOT::Math::XYZPoint & cluspos, std::vector<double> & xmax,std::vector<double> & ymax){
+void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,
+				 const ROOT::Math::XYZPoint & clusPos, 
+				 const Direction & clusDir, 
+				 std::vector<double> & xmax,std::vector<double> & ymax){
   
   std::vector<double> dRmin;
-  dRmin.resize(nLayers_,10);
+  dRmin.resize(nLayers_,100);
   //std::vector<double> xmaxgeom;
   //xmaxgeom.resize(nLayers_,0);
   //std::vector<double> ymaxgeom;
@@ -1137,11 +1166,10 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
       }
       }*/
 
-    ROOT::Math::XYZVector pos(posx-cluspos.x()*10,posy-cluspos.y()*10,posz-cluspos.z()*10);
-    double deta = fabs(pos.eta()-etamax);
-    double dphi = DeltaPhi(pos.phi(),phimax);
+    double dx = posx-clusDir.GetX(posz,clusPos.x(),clusPos.z());
+    double dy = posy-clusDir.GetY(posz,clusPos.y(),clusPos.z());
     
-    double dR = sqrt(pow(deta,2)+pow(dphi,2));
+    double dR = sqrt(pow(dx,2)+pow(dy,2));
     if (dR<dRmin[layer]) {
       dRmin[layer] = dR;
       xmax[layer] = posx;
@@ -1154,6 +1182,12 @@ void PositionFit::getMaximumCell(std::vector<HGCSSRecoHit> *rechitvec,const doub
     
   for (unsigned iL(0);iL<nLayers_;++iL){//loop on layers
     p_dRmin[iL]->Fill(dRmin[iL]);
+    /*std::cout << iL << " true " 
+	      <<truthPos(iL).X() << " " << truthPos(iL).Y() << " true2 "
+	      << clusDir.GetX(avgZ_[iL],clusPos.x(),clusPos.z()) << " "
+	      << clusDir.GetY(avgZ_[iL],clusPos.y(),clusPos.z()) << " reco "
+	      << xmax[iL] << " " << ymax[iL]
+	      << std::endl;*/
   }
 }
 
@@ -1866,16 +1900,19 @@ unsigned PositionFit::fitEvent(const unsigned ievt,
   recoPhi_ = recoDir_.phi();
   showerX14_ = position14[0][0];
   showerY14_ = position14[0][1];
+  showerZ14_ = avgZ_[14];
   nRemove_ = lToRemove.size();
+  nLayersFit_ = nL;
 
   truthEta_ = truthDir.eta();
   truthPhi_ = truthDir.phi();
-  truthX0_ = truthPos(0).X();
-  truthY0_ = truthPos(0).Y();
+  truthX14_ = truthPos(14).X();
+  truthY14_ = truthPos(14).Y();
 
   if (saveEtree_) outtreeFit_->Fill();
 
-
+  //std::cout << " end " ;
+  //fit.Print();
   //std::cout << " -- Size of eventPos=" << eventPos.size() << std::endl;
   return 0;
 }

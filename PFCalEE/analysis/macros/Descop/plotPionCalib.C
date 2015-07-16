@@ -281,7 +281,7 @@ TPad* plotCalibration(TGraphErrors *gr,TPad *pad,bool doRatio, TGraphErrors *grD
 
   //if (dovsE) gr->Fit(fitFunc,"RIME","same",0,200);
   //else gr->Fit(fitFunc,"RIME","same",0,pT(200,eta));
-  if (dovsE) gr->Fit(fitFunc,"QIME","same",0,200);
+  if (dovsE) gr->Fit(fitFunc,"QIME","same",50,500);
   else gr->Fit(fitFunc,"QIME","same");
   TLatex lat;
   lat.SetTextColor(6);
@@ -452,7 +452,7 @@ int plotPionCalib(){//main
   bool doFH = true;
   bool doBH = false;
 
-  std::string model = "_tp24odd";
+  std::string model = "_tp1809";
 
   const unsigned nRemove = 1;
   std::vector<unsigned> lToRemove;
@@ -476,7 +476,7 @@ int plotPionCalib(){//main
 
 
   const unsigned nV = 1;
-  TString version[nV] = {"25"};//,"0"};
+  TString version[nV] = {"33"};//,"0"};
   
   const unsigned nLayers = doEE ? 31 : doFH ? 24 : 12;
   std::string treeBaseStr;
@@ -569,7 +569,7 @@ int plotPionCalib(){//main
     for (unsigned iV(0); iV<nV;++iV){//loop on versions
       for (unsigned iS(0); iS<nS;++iS){//loop on scenarios
 
-	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV04-02-02/version"+version[iV]+"/"+scenario[iS]+"/";
+	TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV05-02-04/version"+version[iV]+"/"+scenario[iS]+"/";
 	TTree *ltree[nPu][nGenEnAll];
 	TGraphErrors *resoRecoFit[nPu][nLayers][nSR];
 	

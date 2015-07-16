@@ -20,6 +20,8 @@ class PCAShowerAnalysis
   PCAShowerAnalysis(bool segmented=true, bool logweighting=true, bool debug=false ) ;
   
   void showerParameters( const HGCSSCluster & );
+  void showerParameters( const HGCSSCluster & ,
+			 const std::vector<unsigned> & );
 
   ROOT::Math::XYZPoint showerBarycenter;
   ROOT::Math::XYZVector showerAxis;

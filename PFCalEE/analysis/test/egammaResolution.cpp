@@ -180,11 +180,12 @@ int main(int argc, char** argv){//main
 	}
       }
       else continue;
+      std::ostringstream lstrrec;
+      lstrrec << inputrec.str() << "_run" << i << ".root";
+      if (!testInputFile(lstrrec.str(),recFile)) continue;
+      //add only if both sim and reco are found...
       lSimTree->AddFile(lstr.str().c_str());
-      lstr.str("");
-      lstr << inputrec.str() << "_run" << i << ".root";
-      if (!testInputFile(lstr.str(),recFile)) continue;
-      lRecTree->AddFile(lstr.str().c_str());
+      lRecTree->AddFile(lstrrec.str().c_str());
     }
   }
 
@@ -269,7 +270,9 @@ int main(int argc, char** argv){//main
   const unsigned nEvts = ((pNevts > lSimTree->GetEntries() || pNevts==0) ? static_cast<unsigned>(lSimTree->GetEntries()) : pNevts) ;
   
 
-  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug);
+  bool doMatrix = false;
+
+  PositionFit lChi2Fit(nSR,residualMax,nLayers,nSiLayers,applyPuMixFix,debug,doMatrix);
   lChi2Fit.initialise(outputFile,"PositionFit",outFolder,geomConv,puDensity);
 
   //try getting z position from input file, if doesn't exit,
@@ -287,8 +290,19 @@ int main(int argc, char** argv){//main
   else std::cout << " -- Info: redoing least square fit." << std::endl;
 
   if (redoStep>0 || (redoStep==0 && dofit)){
-    lChi2Fit.getInitialPositions(lSimTree,lRecTree,nEvts);
-    lChi2Fit.finaliseErrorMatrix();
+    if (doMatrix){
+      lChi2Fit.getInitialPositions(lSimTree,lRecTree,nEvts);
+      lChi2Fit.finaliseErrorMatrix();
+    } else {
+      lChi2Fit.initialiseClusterHistograms();
+      lChi2Fit.initialisePositionHistograms();
+      //lChi2Fit.setMatrixFolder(outFolder);
+      lChi2Fit.setMatrixFolder("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescopPosCheckBack/gitV02-01-01/version12/gamma/v5_30_/eta16_et70_pu0_IC3/");
+      if (!lChi2Fit.fillMatrixFromFile(false)) {
+	std::cout << " Matrix not found in folder : " << outFolder << std::endl;
+	return 1;
+      }
+    }
     lChi2Fit.initialiseLeastSquareFit();
   }
   
@@ -307,9 +321,14 @@ int main(int argc, char** argv){//main
 
   lRecTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
   if (lRecTree->GetBranch("nPuVtx")) lRecTree->SetBranchAddress("nPuVtx",&nPuVtx);
+  unsigned nTooFar = 0;
+  unsigned nNoCluster = 0;
+
   const unsigned nRemove = 12;
   std::vector<unsigned> lToRemove;
-  unsigned list[nRemove] = {25,27,15,1,10,3,18,5,12,7,23,20};
+  //unsigned list[nRemove] = {25,27,15,1,10,3,18,5,12,7,23,20};
+  //unsigned list[nRemove] = {29,28,27,26,25,24,23,22,21,20,19,18};
+  unsigned list[nRemove] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
@@ -323,7 +342,15 @@ int main(int argc, char** argv){//main
       //mask layers in turn
       lToRemove.clear();
       for (unsigned r(0); r<nRemove+1;++r){
+	bool good = true;
+	if (!doMatrix) {
+	  good = lChi2Fit.getInitialPosition(ievt,nPuVtx,rechitvec,nTooFar,nNoCluster,lToRemove);
+	  if (good && r==0) lChi2Fit.getOutTree()->Fill();
+	}
+	if (!good) continue;
 	FitResult fit;
+	//std::cout << r << " ";
+	//fit.Print();
 	if ( lChi2Fit.performLeastSquareFit(ievt,fit,lToRemove)==0 ){
 	  //SignalEnergy.fillEnergies(ievt,(*ssvec),(*simhitvec),(*rechitvec),nPuVtx,fit);
 	}
@@ -343,7 +370,8 @@ int main(int argc, char** argv){//main
 
   outputFile->Write();
   //outputFile->Close();
-  
+  if (!doMatrix) std::cout << " -- Number of events with closest cluster 1 away from truth : " << nTooFar << std::endl;
+  if (!doMatrix) std::cout << " -- Number of events with no cluster : " << nNoCluster << std::endl;
   std::cout << " - End of egammaResolution program." << std::endl;
 
   return 0;

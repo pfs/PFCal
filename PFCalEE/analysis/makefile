@@ -66,7 +66,9 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(EXEDIR)/maxChargeStudy $(EXEDIR)/plotMomentum $(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution $(EXEDIR)/ootpuOnHiggsPhotons $(EXEDIR)/getAbsorberWeight
 
 #BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
-BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution
+#BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution
+BINS=$(EXEDIR)/plotNabove100fC $(EXEDIR)/egammaResolution
+
 
 SUBDIRS = ../userlib
 

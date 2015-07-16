@@ -24,14 +24,17 @@
 
 int extractCombFactors(){
 
-  unsigned genEnAll[]={3,5,10,30,50,70,100,200};
+  unsigned genEnAll[]={3,5,10,30,50};
   const unsigned nGenEnAll=sizeof(genEnAll)/sizeof(unsigned);
+
+  bool useGSC = false;
 
   const double eta = 2.5;
 
-  const unsigned tpmod = 24;
+  const unsigned tpmod = 28;
   std::ostringstream model;
-  if (tpmod>0) model << "_tp" << tpmod << "even";
+  //if (tpmod>0) model << "_tp" << tpmod;// << "uni";
+  if (tpmod>0) model << "_ecal" << tpmod;// << "uni";
 
 
   double FHtoEslope = 21.02;
@@ -40,7 +43,31 @@ int extractCombFactors(){
   double BHtoEoffset = 3.7;
   double ECALslope = 92.83;
   double ECALoffset = 13;
-  if (tpmod==28){
+  if (tpmod==2812){
+    ECALslope = 93.49;
+    ECALoffset = -5;
+    FHtoEslope = 22.85;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 4.23;
+    BHtoEoffset = 0;//-34.5;
+  }
+  else if (tpmod==2411){
+    ECALslope = 81.64;
+    ECALoffset = 2.5;
+    FHtoEslope = 22.5;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 5;
+    BHtoEoffset = 0;//-34.5;
+  }
+  else if (tpmod==1809){
+    ECALslope = 66.14;
+    ECALoffset = 41;
+    FHtoEslope = 18.4;
+    FHtoEoffset = 0;//-40;
+    BHtoEslope = 5;
+    BHtoEoffset = 0;//-34.5;
+  }
+  else if (tpmod==28){
     ECALslope = 92.41;
     ECALoffset = 23;
   }
@@ -69,7 +96,7 @@ int extractCombFactors(){
   TCanvas *mycSlope2 = new TCanvas("mycSlope2","mycSlope",1500,1000);
   TCanvas *mycSlope3 = new TCanvas("mycSlope3","mycSlope",1500,1000);
 
-  TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV04-02-02/version25/pi-/";
+  TString plotDir = "/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalDescop/gitV05-02-04/version33/pi-/";
 
   TFile *inputFile[nGenEnAll];
   TTree *ltree[nGenEnAll];
@@ -99,6 +126,7 @@ int extractCombFactors(){
       lName << "(EBHCAL-" << BHtoEoffset << ")/" << BHtoEslope
 	//<< ":(EECAL-" << ECALoffset << ")/" << ECALslope
 	    << ":(EFHCAL-" << FHtoEoffset << ")/" << FHtoEslope;
+      if (useGSC) lName << "*globalC_15";
       //if (genEnAll[iE]<60) lName << "*globalC_5";
       //else if (genEnAll[iE]<300) lName << "*globalC_10";
       //else lName << "*globalC_20";
@@ -122,8 +150,12 @@ int extractCombFactors(){
       TF1 *fit = (TF1*)h2_pfx->GetFunction("pol1");
       //grSlope->SetPoint(iE,genEnAll[iE],fit->GetParameter(1));
       //grSlope->SetPointError(iE,0,fit->GetParError(1));
-
-
+      TF1 *fitref = new TF1("fitref","[0]+[1]*x",0,10000);
+      fitref->SetParameters(h2_pfx->GetBinContent(1),-1.49);
+      if (tpmod==1809) fitref->SetParameters(h2_pfx->GetBinContent(1),-0.99);
+      else if (tpmod==2411) fitref->SetParameters(h2_pfx->GetBinContent(1),-1.22);
+      fitref->SetLineColor(7);
+      fitref->Draw("same");
       grSlope->SetPoint(iE,genEnAll[iE],fabs(fit->GetParameter(1)));
       grSlope->SetPointError(iE,0,fit->GetParError(1));
 
@@ -159,7 +191,8 @@ int extractCombFactors(){
       //lName << "(";
       lName << "(EBHCAL-" << BHtoEoffset << ")/(" << BHtoEslope << "*" << BHoverFH << ")"
 	    << "+(EFHCAL-" << FHtoEoffset << ")/" << FHtoEslope;
-      //if (genEnAll[iE]<60) lName << "*globalC_5";
+      if (useGSC) lName << "*globalC_15";
+     //if (genEnAll[iE]<60) lName << "*globalC_5";
       //else if (genEnAll[iE]<300) lName << "*globalC_10";
       //else lName << "*globalC_20";
       lName << ":(EECAL-" << ECALoffset << ")/" << ECALslope;
@@ -214,6 +247,7 @@ int extractCombFactors(){
       //lName << "(";
       lName << "((EBHCAL-" << BHtoEoffset << ")/(" << BHtoEslope << "*" << BHoverFH << ")"
 	    << "+(EFHCAL-" << FHtoEoffset << ")/" << FHtoEslope ;
+      if (useGSC) lName << "*globalC_15";
       //if (genEnAll[iE]<60) lName << "*globalC_5";
       //else if (genEnAll[iE]<300) lName << "*globalC_10";
       //else lName << "*globalC_20";
