@@ -21,7 +21,7 @@
 
 #include "../TDRStyle.h"
 
-#define ISPI
+//#define ISPI
 
 int plotNabove60fCvseta(){//main
 
@@ -81,12 +81,12 @@ int plotNabove60fCvseta(){//main
   grDummy1->SetMinimum(isPi ?0 : 0.5);
   grDummy1->SetMaximum(isPi ? 26 : 1000);
   for (unsigned ieta(0);ieta<neta;++ieta){//loop on pt
-    if (ieta==4) grDummy->SetPoint(ieta,eta[ieta]-0.05,0);
-    else if (ieta==5) grDummy->SetPoint(ieta,eta[ieta]+0.05,0);
-    else grDummy->SetPoint(ieta,eta[ieta],0);
-    if (ieta==4) grDummy1->SetPoint(ieta,eta[ieta]-0.05,0);
-    else if (ieta==5) grDummy1->SetPoint(ieta,eta[ieta]+0.05,0);
-    else grDummy1->SetPoint(ieta,eta[ieta],0);
+    //if (ieta==4) grDummy->SetPoint(ieta,eta[ieta]-0.05,0);
+    //else if (ieta==5) grDummy->SetPoint(ieta,eta[ieta]+0.05,0);
+    grDummy->SetPoint(ieta,eta[ieta],0);
+    //if (ieta==4) grDummy1->SetPoint(ieta,eta[ieta]-0.05,0);
+    //else if (ieta==5) grDummy1->SetPoint(ieta,eta[ieta]+0.05,0);
+    grDummy1->SetPoint(ieta,eta[ieta],0);
   }
   std::ostringstream label;
   label << ";#eta;proba(n_{E>60fC}#geq" << limit << ")";
@@ -100,7 +100,9 @@ int plotNabove60fCvseta(){//main
   TTree *tree = 0;
   TFile *ftmp = 0;
 
-  TLegend *leg = new TLegend(0.72,0.43,0.87,0.93);
+  TLegend *leg;
+  if (isPi) leg = new TLegend(0.72,0.43,0.87,0.93);
+  else leg = new TLegend(0.78,0.11,0.94,0.54);
   leg->SetFillColor(10);
   for (unsigned iv(0); iv<nV;++iv){//loop on version
     myc[iv]->cd();
@@ -110,7 +112,7 @@ int plotNabove60fCvseta(){//main
     gPad->SetGridy(1);
     grDummy1->Draw("AL");
     grDummy1->GetYaxis()->SetNdivisions(121);
-    if (!isPi) grDummy1->GetXaxis()->SetRangeUser(2.4,2.6);
+    //if (!isPi) grDummy1->GetXaxis()->SetRangeUser(2.4,2.6);
  
     for (unsigned ipt(0); ipt<npt;++ipt){//loop on pt
       std::ostringstream lname;
@@ -145,11 +147,12 @@ int plotNabove60fCvseta(){//main
 	std::cout << "v " << v[iv] 
 		  << " et " << pt[ipt] 
 		  << " eta " << eta[ieta];
-	if (ieta==4) eta[ieta] = 2.45;
-	else if (ieta==5) eta[ieta] = 2.55;
+	double neweta = eta[ieta];
+	//if (ieta==4) neweta = 2.45;
+	//else if (ieta==5) neweta = 2.55;
 	if (nentries>0) {
 	  std::cout << " mean " << hprob->GetMean() << " " << hprob->GetMeanError() ;
-	  grMean[iv][ipt]->SetPoint(grMean[iv][ipt]->GetN(),eta[ieta],hprob->GetMean());
+	  grMean[iv][ipt]->SetPoint(grMean[iv][ipt]->GetN(),neweta,hprob->GetMean());
 	  grMean[iv][ipt]->SetPointError(grMean[iv][ipt]->GetN()-1,0,hprob->GetMeanError());
 	  hprob->Scale(1./nentries);
 	}
@@ -162,7 +165,7 @@ int plotNabove60fCvseta(){//main
 	std::cout << " entries=" << hprob->GetEntries() 
 		  << " integral(" << limit+1 << ",N) " << integral << "+/-" << error
 		  << std::endl;
-	gr[iv][ipt]->SetPoint(gr[iv][ipt]->GetN(),eta[ieta],integral);
+	gr[iv][ipt]->SetPoint(gr[iv][ipt]->GetN(),neweta,integral);
 	gr[iv][ipt]->SetPointError(gr[iv][ipt]->GetN()-1,0,error);
 	hprob->Delete();
 	ftmp->Close();

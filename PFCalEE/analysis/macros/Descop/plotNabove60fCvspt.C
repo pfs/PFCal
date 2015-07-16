@@ -21,7 +21,7 @@
 
 #include "../TDRStyle.h"
 
-#define ISPI
+//#define ISPI
 
 int plotNabove60fCvspt(){//main
 
@@ -38,16 +38,16 @@ int plotNabove60fCvspt(){//main
   const unsigned npt = 15;
   const double pt[npt] = {1,2,3,4,5,6,7,8,9,10,12,14,16,18,20};
 #else
-  const unsigned npt = 8;
-  const double pt[npt] = {3,5,10,30,50,70,100,200};
+  const unsigned npt = 9;
+  const double pt[npt] = {3,5,10,20,30,50,70,100,200};
 #endif
 
 #ifdef ISPI
   const unsigned neta = 5;
   const double eta[neta] = {1.75,2.0,2.25,2.5,2.75};
 #else
-  const unsigned neta = 1;
-  const double eta[neta] = {2.5};
+  const unsigned neta = 6;
+  const double eta[neta] = {1.7,1.9,2.1,2.3,2.5,2.7};
 #endif
 
   const std::string path = "/afs/cern.ch/work/a/amagnan/PFCalEEAna//HGCalTime/gitV05-02-04/"+particle+"/";
@@ -122,7 +122,8 @@ int plotNabove60fCvspt(){//main
 	std::ostringstream fname;
 	fname << path << "v" << v[iv] << "_et" << pt[ipt] << "_eta" << eta[ieta];
 	if (eta[ieta]==2) fname << ".0";
-	fname  << "/NAbove26.root";
+	if (ieta==4 && (pt[ipt]==50 || pt[ipt]==70)) fname << "/NAbove26_old.root";
+	else fname  << "/NAbove26.root";
 	ftmp = TFile::Open(fname.str().c_str());
 	if (!ftmp) {
 	  continue;
