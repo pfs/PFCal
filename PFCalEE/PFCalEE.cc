@@ -44,6 +44,10 @@ int main(int argc,char** argv)
   //int model=DetectorConstruction::m_BOXWITHCRACK_100;
   //int model=DetectorConstruction::m_SIMPLE_100;
 
+  //fast time TB
+  model=DetectorConstruction::m_SIMPLE_3;
+  version=3203;
+
   double eta=0;
 
   if(argc>2) version=atoi(argv[2]);

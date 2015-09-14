@@ -827,7 +827,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_sectorWidth = m_CalorSizeXY;
   }
   else if (model_ == DetectorConstruction::m_SIMPLE_3){
-    m_CalorSizeXY=3;
+    m_CalorSizeXY=3*cm;
     m_sectorWidth = m_CalorSizeXY;
   }
   else if (model_ == DetectorConstruction::m_SIMPLE_100){
@@ -894,6 +894,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4double expHall_z = 6*m;
   G4double expHall_x = 3*m;
   G4double expHall_y = 3*m;
+  if (model_ == DetectorConstruction::m_SIMPLE_3)
+    {
+      expHall_z = 50*cm;
+      expHall_x=3.5*cm;
+      expHall_y=3.5*cm;
+    }
+
 
   G4Box* experimentalHall_box = new G4Box("expHall_box",expHall_x,expHall_y,expHall_z);
 

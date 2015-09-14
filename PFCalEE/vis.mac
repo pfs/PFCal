@@ -8,11 +8,11 @@
 /run/verbose 2
 #
 # Use this open statement to create an OpenGL view:
-#/vis/open OGL 600x600-0+0
+/vis/open OGL 600x600-0+0
 
 # Use this open statement to create a .prim file suitable for
 # viewing in DAWN:
-/vis/open DAWNFILE
+#/vis/open DAWNFILE
 #
 # Use this open statement to create a .heprep file suitable for
 # viewing in HepRApp:
@@ -77,13 +77,13 @@
 # Many other options are available with /vis/modeling and /vis/filtering.
 # For example, to select colour by particle ID:
 /vis/modeling/trajectories/create/drawByParticleID
-/vis/modeling/trajectories/drawByParticleID-0/set e- blue
-/vis/modeling/trajectories/drawByParticleID-0/set e+ blue
-/vis/modeling/trajectories/drawByParticleID-0/set gamma red
-/vis/modeling/trajectories/drawByParticleID-0/set pi+ green
-/vis/modeling/trajectories/drawByParticleID-0/set pi- green
-/vis/modeling/trajectories/drawByParticleID-0/set mu+ cyan
-/vis/modeling/trajectories/drawByParticleID-0/set mu- cyan
+/vis/modeling/trajectories/drawByParticleID-0/set e- red
+/vis/modeling/trajectories/drawByParticleID-0/set e+ red
+/vis/modeling/trajectories/drawByParticleID-0/set gamma green
+/vis/modeling/trajectories/drawByParticleID-0/set pi+ blue
+/vis/modeling/trajectories/drawByParticleID-0/set pi- blue
+/vis/modeling/trajectories/drawByParticleID-0/set mu+ gray
+/vis/modeling/trajectories/drawByParticleID-0/set mu- gray
 #cyan, magenta, gray,white,yellow
 
 # To superimpose all of the events from a given run:

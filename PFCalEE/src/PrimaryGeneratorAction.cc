@@ -123,8 +123,9 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   //FAST TIME TEST BEAM MODEL
   if (model_ == 5)
     {
-      x0=(G4RandFlat::shoot(-3.*cm,+3*cm));
-      y0=(G4RandFlat::shoot(-3.*cm,+3*cm));
+      x0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
+      y0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
+      z0=-Detector->GetCalorSizeZ()*2;
     }
 
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
