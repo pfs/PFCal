@@ -120,13 +120,20 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     //y0 = (G4RandFlat::shoot(0.,10.)-5)*mm;
   }
 
+  //FAST TIME TEST BEAM MODEL
+  if (model_ == 5)
+    {
+      x0=(G4RandFlat::shoot(-3.*cm,+3*cm));
+      y0=(G4RandFlat::shoot(-3.*cm,+3*cm));
+    }
+
   particleGun->SetParticlePosition(G4ThreeVector(x0,y0,z0));
   G4cout << " -- Gun position set to: " << x0 << "," << y0 << "," << z0 << G4endl;
 
   G4double theta0 = 2*atan(exp(-1*eta_));
   G4double phi0 = (G4RandFlat::shoot(0.,2*PI));
   if (model_ == 2) particleGun->SetParticleMomentumDirection(G4ThreeVector(cos(phi0)*sin(theta0), sin(phi0)*sin(theta0), cos(theta0)));
-  
+
   if(currentGenerator){
     currentGenerator->GeneratePrimaryVertex(anEvent);
   }
