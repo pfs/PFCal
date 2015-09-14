@@ -83,7 +83,8 @@ public:
     m_SIMPLE_50=1,
     m_FULLSECTION=2,
     m_SIMPLE_100=3,
-    m_BOXWITHCRACK_100=4
+    m_BOXWITHCRACK_100=4,
+    m_SIMPLE_3=5
   };
 
   /**

@@ -527,8 +527,8 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 
 	// Si Width
 	float siWidth(120.0);
-	if(version_=v_FASTTIME_TB2015_0X0_200 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_3X0_200 || version_== v_FASTTIME_TB2015_4X0_200) siWidth=200.0;
-	if(version_=v_FASTTIME_TB2015_0X0_320 || version_==v_FASTTIME_TB2015_1X0_320 || version_==v_FASTTIME_TB2015_2X0_320 || version_==v_FASTTIME_TB2015_3X0_320 || version_== v_FASTTIME_TB2015_4X0_320) siWidth=320.0;
+	if(version_==v_FASTTIME_TB2015_0X0_200 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_3X0_200 || version_==v_FASTTIME_TB2015_4X0_200) siWidth=200.0;
+	if(version_==v_FASTTIME_TB2015_0X0_320 || version_==v_FASTTIME_TB2015_1X0_320 || version_==v_FASTTIME_TB2015_2X0_320 || version_==v_FASTTIME_TB2015_3X0_320 || version_==v_FASTTIME_TB2015_4X0_320) siWidth=320.0;
 	
 	std::vector<G4double> lThick(1,0);
 	std::vector<std::string> lEle(1,"");
@@ -550,7 +550,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//Pb 
-	lThick[0]=pbX0*5.612*mm;lEle[0]="Pb";
+	lThick[0]=pbX0*5.55*mm;lEle[0]="Pb";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//AIR #3
@@ -824,6 +824,10 @@ void DetectorConstruction::UpdateCalorSize(){
   }
   else if (model_ == DetectorConstruction::m_SIMPLE_50){
     m_CalorSizeXY=500;
+    m_sectorWidth = m_CalorSizeXY;
+  }
+  else if (model_ == DetectorConstruction::m_SIMPLE_3){
+    m_CalorSizeXY=3;
     m_sectorWidth = m_CalorSizeXY;
   }
   else if (model_ == DetectorConstruction::m_SIMPLE_100){
