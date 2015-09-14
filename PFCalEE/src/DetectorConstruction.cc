@@ -43,6 +43,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
   //Cu 14.36 mm
   switch(version_)
     {
+
       //cf. http://arxiv.org/abs/0805.4833
     case v_CALICE:
       {
@@ -497,6 +498,77 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	for(unsigned i=0; i<9; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 	lThick[0] = 104*mm;
 	for(unsigned i=0; i<7; i++) m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+	break;
+      }
+
+      //FAST TIME TEST BEAM SIMPLIFIED SETUP
+    case v_FASTTIME_TB2015_0X0_120:
+    case v_FASTTIME_TB2015_1X0_120:
+    case v_FASTTIME_TB2015_2X0_120:
+    case v_FASTTIME_TB2015_3X0_120:
+    case v_FASTTIME_TB2015_4X0_120:
+    case v_FASTTIME_TB2015_0X0_200:
+    case v_FASTTIME_TB2015_1X0_200:
+    case v_FASTTIME_TB2015_2X0_200:
+    case v_FASTTIME_TB2015_3X0_200:
+    case v_FASTTIME_TB2015_4X0_200:
+    case v_FASTTIME_TB2015_0X0_320:
+    case v_FASTTIME_TB2015_1X0_320:
+    case v_FASTTIME_TB2015_2X0_320:
+    case v_FASTTIME_TB2015_3X0_320:
+    case v_FASTTIME_TB2015_4X0_320:    
+      {
+	// radiation lengths in lead
+	float pbX0(0.0);
+	if(version_==v_FASTTIME_TB2015_1X0_120 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_1X0_320) pbX0=1.0;
+	if(version_==v_FASTTIME_TB2015_2X0_120 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_2X0_320) pbX0=2.0;
+	if(version_==v_FASTTIME_TB2015_3X0_120 || version_==v_FASTTIME_TB2015_3X0_200 || version_==v_FASTTIME_TB2015_3X0_320) pbX0=3.0;
+	if(version_==v_FASTTIME_TB2015_4X0_120 || version_==v_FASTTIME_TB2015_4X0_200 || version_==v_FASTTIME_TB2015_4X0_320) pbX0=3.0;
+
+	// Si Width
+	float siWidth(120.0);
+	if(version_=v_FASTTIME_TB2015_0X0_200 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_3X0_200 || version_== v_FASTTIME_TB2015_4X0_200) siWidth=200.0;
+	if(version_=v_FASTTIME_TB2015_0X0_320 || version_==v_FASTTIME_TB2015_1X0_320 || version_==v_FASTTIME_TB2015_2X0_320 || version_==v_FASTTIME_TB2015_3X0_320 || version_== v_FASTTIME_TB2015_4X0_320) siWidth=320.0;
+	
+	std::vector<G4double> lThick(1,0);
+	std::vector<std::string> lEle(1,"");
+	
+	//BOX
+	lThick[0]=1.0*mm;lEle[0]="Air";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//AIR #1
+	lThick[0]=1.0*cm;lEle[0]="Air";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//MCP
+	lThick[0]=3.0*mm;lEle[0]="Al";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//AIR #2
+	lThick[0]=1.0*cm;lEle[0]="Air";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//Pb 
+	lThick[0]=pbX0*5.612*mm;lEle[0]="Pb";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//AIR #3
+	lThick[0]=1.0*cm;lEle[0]="Air";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//Si #1
+	lThick[0]=(siWidth*1e-3)*mm;lEle[0]="Si";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//AIR #4
+	lThick[0]=1.0*cm;lEle[0]="Air";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
+	//Si #2
+	lThick[0]=(siWidth*1e-3)*mm;lEle[0]="Si";
+	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
+
 	break;
       }
 
