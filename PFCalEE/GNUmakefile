@@ -37,7 +37,6 @@ else
       LDLIBS1 += -L$(HEPMC_DIR)/lib -lHepMC -lHepMCfio #$(G4TMPDIR)/HEPEvtcom.o
 endif
 
-
 SUBDIRS = userlib
 
 #pythia stuff

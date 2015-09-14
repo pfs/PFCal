@@ -12,7 +12,10 @@
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
 
-static const float CELL_SIZE_X=2.5;//mm
+
+static const float CELL_SIZE_X=1.5;//mm
+//static const float CELL_SIZE_X=2.5;//mm
+
 static const float CELL_SIZE_Y=CELL_SIZE_X;
 
 class HGCSSSimHit{
