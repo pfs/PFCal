@@ -15,7 +15,7 @@ usage = 'usage: %prog [options]'
 parser = optparse.OptionParser(usage)
 parser.add_option('-q', '--queue'       ,    dest='queue'              , help='batch queue'                  , default='local')
 parser.add_option('-t', '--git-tag'     ,    dest='gittag'             , help='git tag version'              , default=githash)
-parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3203)
+parser.add_option('-v', '--version'     ,    dest='version'            , help='detector version'             , default=3203,    type=int)
 parser.add_option(      '--particle'    ,    dest='particle'           , help='particle type'                , default='e-')
 parser.add_option('-n', '--nevts'       ,    dest='nevents'            , help='number of events to generate' , default=100,     type=int)
 parser.add_option('-e', '--en'          ,    dest='energy'             , help='energy'                       , default=50,      type=float)

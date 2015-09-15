@@ -19,7 +19,7 @@ USERLIBS += -Wl,-rpath,$(FASTJET_INSTALL)/lib -lm  -L$(FASTJET_INSTALL)/lib -lfa
 USERLIBS += -L$(BOOSTSYS)/lib -lboost_regex -lboost_program_options -lboost_filesystem
 
 #CXXFLAGS = -Wall -W -Wno-unused-function -Wno-parentheses -Wno-char-subscripts -Wno-unused-parameter -O2 
-CXXFLAGS = -g -Wall -W -O2 -std=c++0x # -std=c++11 
+CXXFLAGS = -g -Wall -W -O2 -std=c++0x -fPIC# -std=c++11 
 #CXXFLAGS = -Wall -W -O2 -std=c++11 
 LDFLAGS = -shared -Wall -W
 
@@ -68,7 +68,7 @@ OBJS=$(subst $(SRCDIR), $(OBJDIR),$(subst cc,$(OBJ_EXT),$(SRCS)))
 #BINS=$(EXEDIR)/egammaResolution $(EXEDIR)/higgsResolution
 BINS=$(EXEDIR)/egammaResoWithTruth $(EXEDIR)/egammaResolution $(EXEDIR)/hadronResolution
 
-SUBDIRS = ../userlib
+SUBDIRS = ../userlib 
 
 .PHONY: $(SUBDIRS) all
 all: $(SUBDIRS) lib $(BINS)
