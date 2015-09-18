@@ -17,6 +17,9 @@ public:
   //CTOR
   SamplingSection(const std::vector<G4double> & aThicknessVec,
 		  const std::vector<std::string> & aMaterialVec)
+    : isCylinder_(false),
+      radius_(-1),
+      fullySensitive_(false)
   {
     if (aMaterialVec.size() != aThicknessVec.size()) {
       G4cout << " -- ERROR in sampling section definition. Expect input vectors with same size containing thicknesses (size=" << aThicknessVec.size() << ") and material names (size=" << aMaterialVec.size() << "). Exiting..." << G4endl;
@@ -57,6 +60,12 @@ public:
     std::cout << " -- End of sampling section initialisation. Input " << aThicknessVec.size() << " elements, constructing " << n_elements << " elements with " << n_sens_elements << " sensitive elements." << std::endl;
 
   };
+
+  bool isCylinder_;
+  float radius_;
+  void setSectionAsCylinder(float radius) { isCylinder_=true; radius_=radius; }
+  bool fullySensitive_;
+  void enableAsSensitive() { fullySensitive_=true;}
 
   //DTOR
   ~SamplingSection() { };

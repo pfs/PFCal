@@ -190,7 +190,7 @@ private:
   G4double getCrackOffset(size_t layer);
   G4double getAngOffset(size_t layer);
 
-  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width);
+  G4CSGSolid *constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width,const G4double &radius);
   
 
   std::vector<G4Material* > m_SensitiveMaterial;

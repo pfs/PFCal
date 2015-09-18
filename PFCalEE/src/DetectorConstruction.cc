@@ -525,10 +525,10 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	if(version_==v_FASTTIME_TB2015_3X0_120 || version_==v_FASTTIME_TB2015_3X0_200 || version_==v_FASTTIME_TB2015_3X0_320) pbX0=3.0;
 	if(version_==v_FASTTIME_TB2015_4X0_120 || version_==v_FASTTIME_TB2015_4X0_200 || version_==v_FASTTIME_TB2015_4X0_320) pbX0=3.0;
 
-	// Si Width
-	float siWidth(120.0);
-	if(version_==v_FASTTIME_TB2015_0X0_200 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_3X0_200 || version_==v_FASTTIME_TB2015_4X0_200) siWidth=200.0;
-	if(version_==v_FASTTIME_TB2015_0X0_320 || version_==v_FASTTIME_TB2015_1X0_320 || version_==v_FASTTIME_TB2015_2X0_320 || version_==v_FASTTIME_TB2015_3X0_320 || version_==v_FASTTIME_TB2015_4X0_320) siWidth=320.0;
+	// Si Width (average depletion thickness at V=600V)
+	float siWidth(140.5);
+	if(version_==v_FASTTIME_TB2015_0X0_200 || version_==v_FASTTIME_TB2015_1X0_200 || version_==v_FASTTIME_TB2015_2X0_200 || version_==v_FASTTIME_TB2015_3X0_200 || version_==v_FASTTIME_TB2015_4X0_200) siWidth=215.75;
+	if(version_==v_FASTTIME_TB2015_0X0_320 || version_==v_FASTTIME_TB2015_1X0_320 || version_==v_FASTTIME_TB2015_2X0_320 || version_==v_FASTTIME_TB2015_3X0_320 || version_==v_FASTTIME_TB2015_4X0_320) siWidth=288.5;
 	
 	std::vector<G4double> lThick(1,0);
 	std::vector<std::string> lEle(1,"");
@@ -537,16 +537,13 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	lThick[0]=1.0*mm;lEle[0]="Air";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
-	//AIR #1
-	lThick[0]=1.0*cm;lEle[0]="Air";
+	//MCP trigger
+	lThick[0]=18*mm;lEle[0]="Al";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-
-	//MCP
-	lThick[0]=3.0*mm;lEle[0]="Al";
-	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-
-	//AIR #2
-	lThick[0]=1.0*cm;lEle[0]="Air";
+	m_caloStruct[ m_caloStruct.size()-1 ].setSectionAsCylinder( 9*mm );
+	m_caloStruct[ m_caloStruct.size()-1 ].enableAsSensitive();
+	
+	lThick[0]=80*mm;lEle[0]="Air";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//Pb 
@@ -554,7 +551,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//AIR #3
-	lThick[0]=1.0*cm;lEle[0]="Air";
+	lThick[0]=1.5*mm;lEle[0]="Air";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//Si #1
@@ -562,7 +559,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//AIR #4
-	lThick[0]=1.0*cm;lEle[0]="Air";
+	lThick[0]=10.8*mm;lEle[0]="Air";
 	m_caloStruct.push_back( SamplingSection(lThick,lEle) );
 
 	//Si #2
@@ -972,6 +969,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       const unsigned nEle = m_caloStruct[i].n_elements;
       //index for counting Si sensitive layers
       unsigned idx = 0;
+      float volRadius( m_caloStruct[i].isCylinder_ ? m_caloStruct[i].radius_ : -1 );
 
       for (unsigned ie(0); ie<nEle;++ie){
 	std::string eleName = m_caloStruct[i].ele_name[ie];
@@ -990,7 +988,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	 extraWidth = 5*mm;
 	}
 	if(thick>0){
-	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
+	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth,volRadius);
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  m_caloStruct[i].ele_X0[ie] = m_materials[eleName]->GetRadlen();
 	  m_caloStruct[i].ele_dEdx[ie] = m_dEdx[eleName];
@@ -1055,6 +1053,7 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	crackOffset=0;
       }
       const unsigned nEle = m_caloStruct[i].n_elements;
+      float volRadius( m_caloStruct[i].isCylinder_ ? m_caloStruct[i].radius_ : -1 );
       for (unsigned ie(0); ie<nEle;++ie){
 
 	std::string eleName = m_caloStruct[i].ele_name[ie];
@@ -1068,7 +1067,7 @@ void DetectorConstruction::fillInterSectorSpace(const unsigned sectorNum,
 	sprintf(nameBuf,"%s%d_%d",eleName.c_str(),int(sectorNum),int(i+1));
 	std::string baseName(nameBuf);
 	if(thick>0){
-	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth);
+	  solid = constructSolid(baseName,thick,zOffset+zOverburden,angOffset+minL,width+extraWidth,volRadius);
 	  G4LogicalVolume *logi = new G4LogicalVolume(solid, m_materials[eleName], baseName+"log");
 	  G4double xpvpos = -m_CalorSizeXY/2.+minL+width/2+crackOffset;
 	  if (model_ == DetectorConstruction::m_FULLSECTION) xpvpos=0;
@@ -1167,7 +1166,7 @@ void DetectorConstruction::SetDropLayers(std::string layers)
   std::cout << std::endl;
 }
 
-G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width){
+G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double thick, G4double zpos,const G4double & minL, const G4double & width,const G4double &radius){
   
   G4CSGSolid *solid;
   if (model_ == DetectorConstruction::m_FULLSECTION){
@@ -1175,6 +1174,9 @@ G4CSGSolid *DetectorConstruction::constructSolid (std::string baseName, G4double
     double maxR = tan(2*atan(exp(-m_minEta)))*(zpos+m_z0pos+m_CalorSizeZ/2);
     //std::cout << " zpos = " << zpos+m_z0pos+m_CalorSizeZ/2 << " radius range " << minR << " " << maxR << std::endl;
     solid = new G4Tubs(baseName+"box",minR,maxR,thick/2,minL,width);
+  }
+  else if(model_==DetectorConstruction::m_SIMPLE_3 && radius>0.){
+    solid = new G4Tubs(baseName+"box",0,radius,thick/2,0.*degree,360.*degree);
   }
   else{
     solid = new G4Box(baseName+"box", width/2, m_CalorSizeXY/2, thick/2 );
