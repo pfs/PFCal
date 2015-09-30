@@ -45,6 +45,8 @@ def analyze(url,windowSize=2.5,fixedWindow=True,fOutName='H4treeReco.root'):
     outT.Branch( 'charge_integ', charge_integ, 'charge_integ[maxch]/F' )
     charge_integ_full = array( 'f', maxch*[ 0. ] )
     outT.Branch( 'charge_integ_full', charge_integ_full, 'charge_integ_full[maxch]/F' )
+    charge_pmult = array( 'f', maxch*[ 0. ] )
+    outT.Branch( 'charge_pmult',charge_pmult, 'charge_pmult[maxch]/F' )
     dR_avg = array( 'f', maxch*[ 0. ] )
     outT.Branch( 'dR_avg', dR_avg, 'dR_avg[maxch]/F' )
     dR_rms = array( 'f', maxch*[ 0. ] )
@@ -66,6 +68,7 @@ def analyze(url,windowSize=2.5,fixedWindow=True,fOutName='H4treeReco.root'):
 
         #integrate total energy in sim hits
         totalEn,totalEnInWindow={},{}
+        partMultInWindow={}
         enWgtR,enWgtR2={},{}
         simhits=tree.HGCSSSimHitVec
         for hit in simhits:
@@ -87,10 +90,12 @@ def analyze(url,windowSize=2.5,fixedWindow=True,fOutName='H4treeReco.root'):
             if not lay in totalEn: 
                 totalEn[lay]=0.0
                 totalEnInWindow[lay]=0.0
+                partMultInWindow[lay]=0
                 enWgtR[lay]=0.0
                 enWgtR2[lay]=0.0
 
             en=hit.energy()*1000.
+            partMultInWindow[lay]+=hit.numberOfParticles()
             totalEn[lay]+=en
             enWgtR[lay]+=en*(rho)
             enWgtR2[lay]+=en*(rho**2)
@@ -101,6 +106,7 @@ def analyze(url,windowSize=2.5,fixedWindow=True,fOutName='H4treeReco.root'):
         maxch=0
         for lay in totalEn:
             ch[maxch]=lay
+            charge_pmult[maxch]=partMultInWindow[lay]
             charge_integ[maxch]=totalEnInWindow[lay]
             charge_integ_full[maxch]=totalEn[lay]
             if totalEn[lay]>0:
@@ -173,7 +179,7 @@ def main():
             fOutName=fOutName.replace('/','_')
             fOutName=os.path.join(opt.outDir,fOutName)
             if useEOS: url='root://eoscms//'+url
-            fixedWindow=False if 'mu-' in url else True
+            fixedWindow=True #False if 'mu-' in url else True
             task_list.append( (url,opt.window,fixedWindow,fOutName) )
 
     #un-mount
