@@ -73,7 +73,7 @@ g4Macro.write('/run/beamOn %d\n'%(opt.nevents))
 g4Macro.close()
 os.system('chmod u+rwx JOBS/runJob_%s.sh'%timeTag)
 if opt.queue != 'local':
-    os.system('bsub -q %s JOBS/runJob_%s.sh' % (opt.queue,timeTag))
+    os.system('bsub -q %s %s/JOBS/runJob_%s.sh' % (opt.queue,os.getcwd(),timeTag))
 else: 
     print 'Local queue: running job locally'
     os.system('sh JOBS/runJob_%s.sh' % timeTag)

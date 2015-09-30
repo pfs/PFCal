@@ -123,10 +123,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   //FAST TIME TEST BEAM MODEL
   if (model_ == 5)
     {
-      x0=0;
-      y0=0;
-      //x0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
-      //y0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
+      x0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
+      y0=(G4RandFlat::shoot(-1.5*cm,+1.5*cm));
       z0=-Detector->GetCalorSizeZ()*2;
     }
 
