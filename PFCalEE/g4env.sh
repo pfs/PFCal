@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$XERCESCROOT/lib:$HEPMC_DIR/lib:$USERBAS
 cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.18/${ARCH}/root/
 source bin/thisroot.sh
 cd - &> /dev/null
-export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin
+export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin:/afs/cern.ch/project/eos/installation/cms/bin/
 export PYTHONDIR=/afs/cern.ch/sw/lcg/external/Python/2.7.3/${ARCH}
 export PYTHONPATH=$PYTHONPATH:$ROOTSYS/lib
 export LD_LIBRARY_PATH=$ROOTSYS/lib:$PYTHONDIR/lib:$LD_LIBRARY_PATH

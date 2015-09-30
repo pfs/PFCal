@@ -43,8 +43,8 @@ scriptFile.write('localdir=`pwd`\n')
 scriptFile.write('echo "--Local directory is $localdir" >> %s.log\n'%outFile)
 scriptFile.write('ls * >> %s.log\n'%outFile)
 if '/store/' in outDir:
-    scriptFile.write('cmsStage %s.root %s/\n' % (outFile,outDir) )
-    scriptFile.write('cmsStage %s.log %s/\n' % (outFile,outDir) )
+    scriptFile.write('cmsStage -f %s.root %s/\n' % (outFile,outDir) )
+    scriptFile.write('cmsStage -f %s.log %s/\n' % (outFile,outDir) )
     scriptFile.write('rm %s.*\n' % outFile)
 elif outDir!=os.getcwd():
     scriptFile.write('mv %s.root %s/\n' % (outFile,outDir) )
