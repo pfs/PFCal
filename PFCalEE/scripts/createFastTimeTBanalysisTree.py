@@ -150,7 +150,7 @@ def main():
     #configuration
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
-    parser.add_option('-i', '--inDir',   dest='inDir',  help='input directory with files', default='/store/cmst3/group/hgcal/TimingTB_H2_Jul2015/SIM/11ed298', type='string')
+    parser.add_option('-i', '--inDir',   dest='inDir',  help='input directory with files', default='/store/cmst3/group/hgcal/TimingTB_H2_Jul2015/SIM/e22c3ed', type='string')
     parser.add_option('-o', '--outDir',  dest='outDir', help='output directory',           default='FTTBAnalysis',   type='string')
     parser.add_option('-w', '--window',  dest='window', help='Window size (mm)',           default=2.5,  type=float)
     parser.add_option('-n', '--njobs',   dest='njobs',  help='# jobs to run in parallel',  default=0,    type=int)
