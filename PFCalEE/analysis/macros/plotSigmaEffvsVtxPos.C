@@ -28,6 +28,7 @@ void drawLayerWithGap(TLatex & lat, bool random, double ypos=0)
   lat.SetTextSize(0.03);
   lat.SetTextAngle(90);
   char buf[500];
+
   for (unsigned il(0);il<28;++il){
     if (random) sprintf(buf,"Layer %d",il);
     else sprintf(buf,"Layer %d-%d",il,il+1);
@@ -35,11 +36,12 @@ void drawLayerWithGap(TLatex & lat, bool random, double ypos=0)
     if (-230+offset < -170) continue;
     if (random || (!random && il%2==0)) lat.DrawLatex(-230.+offset,ypos,buf);
   }
+  
   for (unsigned il(0);il<28;++il){
     if (random) sprintf(buf,"Layer %d",il);
     else sprintf(buf,"Layer %d-%d",il,il+1);
     double offset = random ? 10.*((7*il)%31) : il/2*30;
-    if (230+offset > 290) continue;
+    if (230+offset>340) continue;
     if (random || (!random && il%2==0)) lat.DrawLatex(230.+offset,ypos,buf);
   }
   lat.SetTextAngle(0);
@@ -70,7 +72,8 @@ int plotSigmaEffvsVtxPos(){//main
   const double pT = 60;
   const double Egen = pT*cosh(eta);
 
-  const std::string version = "V06b-03-05";
+  const std::string version = "V06d-04-06";
+
   std::string label[nF] = {"phi90","phi79"};
 
   bool linedup = (version=="V06-03-04");
@@ -83,13 +86,29 @@ int plotSigmaEffvsVtxPos(){//main
     label[0] = "V06bphi90";
     label[1] = "V06bphi79";
   }
+  else if (version=="V06c-04-06") {
+    label[0] = "V06cphi90";
+    label[1] = "V06cphi79";
+  }
+  else if (version=="V06d-04-06") {
+    label[0] = "V06dphi90";
+    label[1] = "V06dphi79";
+  }
+
 
   TFile *fin[nF];
   fin[0] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/eta20_et60_pu0_IC3_Si2.root").c_str());
-  fin[1] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/phi_0.440pi/eta20_et60_pu0_IC3_Si2.root").c_str());
+  //fin[1] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/phi_0.440pi/eta20_et60_pu0_IC3_Si2.root").c_str());
+  fin[1] = TFile::Open(("/afs/cern.ch/work/a/amagnan/PFCalEEAna/HGCalCracks/git"+version+"/version100/model4/gamma/eta20_et60_pu0_IC3_Si2.root").c_str());
 
-  const unsigned nP = 62;
-  const double stepsize = 460./nP;
+  if (!fin[0] || !fin[1]) {
+    std::cout << " Input files not found. Check paths." << std::endl;
+    return 1;
+  }
+
+  const unsigned nP = (version.find("V06-")!=version.npos || version.find("V06a")!=version.npos)?62:102;//92
+  const unsigned nPuniq = (version.find("V06-")!=version.npos || version.find("V06a")!=version.npos)?62:92;
+  const double stepsize = 510./nP;//460./nP;
   double xmin = -170;
   if (linedup) xmin += 0.33+2.5;
 
@@ -174,8 +193,8 @@ int plotSigmaEffvsVtxPos(){//main
       hE[iF][iP] = new TH1F(lname.str().c_str(),";E (GeV); showers",150,0,300);
 
       lvar << "wgtEtotal*" << normalisation << ">>" << lname.str();
-      lcut << "vtxX>" << xmin+iP*stepsize 
-	   << " && vtxX<" << xmin+(iP+1)*stepsize;
+      lcut << "vtxX>" << xmin+(iP%nPuniq)*stepsize 
+	   << " && vtxX<" << xmin+(iP%nPuniq+1)*stepsize;
       errvtx[iP] = stepsize/2.;
       vtx[iP] = xmin+(iP+0.5)*stepsize;
       gaplay[iP] = getGapLayer(vtx[iP]);
@@ -301,7 +320,23 @@ int plotSigmaEffvsVtxPos(){//main
       lat.SetTextSize(0.05);
     }
     else {
-      drawLayerWithGap(lat,random);
+      if (version=="V06b-03-05") drawLayerWithGap(lat,random);
+      lat.SetTextColor(9);
+      lat.SetTextSize(0.03);
+      lat.SetTextAngle(90);
+      if (version=="V06c-04-06"){
+	lat.DrawLatex(230.,0,"Even layers");
+	lat.DrawLatex(260.,0,"Odd layers");
+      }
+      else if (version=="V06d-04-06"){
+	lat.DrawLatex(230.,0,"layer%3=0");
+	lat.DrawLatex(260.,0,"layer%3=1");
+	lat.DrawLatex(290.,0,"layer%3=2");
+	lat.DrawLatex(-170.,0,"layer%3=2");
+      }
+      lat.SetTextAngle(0);
+      lat.SetTextColor(1);
+      lat.SetTextSize(0.05);
     }
 
     TLine *ref = new TLine(-170,sigmaeff_ref*normalisation/Egen,290,sigmaeff_ref*normalisation/Egen);
@@ -310,7 +345,7 @@ int plotSigmaEffvsVtxPos(){//main
     gr[iF]->Draw("PE");
 
     sprintf(buf,"Single #gamma, E_{gen} = %3.1f GeV, #eta=%3.1f",Egen,eta);
-    lat.DrawLatexNDC(0.3,0.8,buf);
+    lat.DrawLatexNDC(0.2,0.8,buf);
 
     if (iF==1){
       lat.DrawLatexNDC(0.3,0.7,"3^{o} tilt");
@@ -352,17 +387,33 @@ int plotSigmaEffvsVtxPos(){//main
       lat.SetTextSize(0.05);
     } 
     else { 
-      drawLayerWithGap(lat,random,-0.015);
+      if (version=="V06b-03-05") drawLayerWithGap(lat,random,-0.015);
+      lat.SetTextColor(9);
+      lat.SetTextSize(0.03);
+      lat.SetTextAngle(90);
+      if (version=="V06c-04-06"){
+	lat.DrawLatex(230.,-0.015,"Even layers");
+	lat.DrawLatex(260.,-0.015,"Odd layers");
+      }
+      else if (version=="V06d-04-06"){
+	lat.DrawLatex(230.,-0.015,"layer%3=0");
+	lat.DrawLatex(260.,-0.015,"layer%3=1");
+	lat.DrawLatex(290.,-0.015,"layer%3=2");
+	lat.DrawLatex(-170.,-0.015,"layer%3=2");
+      }
+      lat.SetTextAngle(0);
+      lat.SetTextColor(1);
+      lat.SetTextSize(0.05);
     }
 
     grMean[iF]->Draw("PE");
 
 
     sprintf(buf,"Single #gamma, E_{gen} = %3.1f GeV, #eta=%3.1f",Egen,eta);
-    lat.DrawLatexNDC(0.3,0.8,buf);
+    lat.DrawLatexNDC(0.2,0.8,buf);
 
     if (iF==1){
-      lat.DrawLatexNDC(0.3,0.7,"3^{o} tilt");
+      lat.DrawLatexNDC(0.2,0.7,"3^{o} tilt");
     }
 
 

@@ -149,6 +149,7 @@ private:
   double vtxZ_;
   double trueEta_;
   double truePhi_;
+  std::vector<double> energyTot_;
   std::vector<std::vector<double> > energySR_;
   std::vector<std::vector<double> > subtractedenergySR_;
   std::vector<std::vector<double> > Exy_;

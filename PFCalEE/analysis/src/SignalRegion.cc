@@ -234,6 +234,7 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
   wgttotalE_ = 0;
   
   for (unsigned iL(0); iL<nLayers_;++iL){
+    energyTot_[iL] = 0;
     for (unsigned iSR(0);iSR<nSR_;++iSR){
       energySR_[iL][iSR] = 0;
       subtractedenergySR_[iL][iSR] = 0;
@@ -309,7 +310,8 @@ bool SignalRegion::fillEnergies(const unsigned ievt,
 
     totalE_ += energy;
     wgttotalE_ += energy*absweight_[layer];    
-    
+    energyTot_[layer] += energy;
+
     double lradius = sqrt(pow(posx,2)+pow(posy,2));
     double puE = puDensity_.getDensity(leta,layer,geomConv_.cellSizeInCm(layer,lradius),nPuVtx);
     double subtractedenergy = std::max(0.,energy - puE);
@@ -371,12 +373,14 @@ void SignalRegion::initialiseHistograms(){
     outtree_->Branch("trueEta",&trueEta_);
     outtree_->Branch("truePhi",&truePhi_);
 
+
     std::vector<double> emptyvec;
     emptyvec.resize(nSR_,0);
     energySR_.resize(nLayers_,emptyvec);
     subtractedenergySR_.resize(nLayers_,emptyvec);
 
     absweight_.resize(nLayers_,1);
+    energyTot_.resize(nLayers_,0);
 
     if (zPos_.size()!=nLayers_) {
       std::cout << " -- ERROR! z positions not filled properly. Exiting..." << std::endl;
@@ -397,6 +401,9 @@ void SignalRegion::initialiseHistograms(){
       label << "zpos_" << iL;
       outtree_->Branch(label.str().c_str(),&zPos_[iL]);
 
+      label.str("");
+      label << "energyTot_" << iL ;
+      outtree_->Branch(label.str().c_str(),&energyTot_[iL]);
 
       for (unsigned iSR(0);iSR<nSR_;++iSR){
 	label.str("");

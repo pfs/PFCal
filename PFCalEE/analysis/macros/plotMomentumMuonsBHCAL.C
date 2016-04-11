@@ -33,8 +33,11 @@ int plotMomentumMuonsBHCAL(){
   const unsigned nFiles = 10;
   const unsigned nE = 4;
   const unsigned et[nE] = {5,10,20,50};
-  const double eta=2.4;
+  const double eta=2.8;
   TCanvas *myc = new TCanvas("myc","myc",1);
+
+  TLatex lat;
+  char buf[500];
 
   for (unsigned iE(0); iE<nE; ++iE){//loop on energy points
     std::ostringstream lstr;
@@ -58,6 +61,9 @@ int plotMomentumMuonsBHCAL(){
     TH1F *p_phi = new TH1F("p_phi",";#phi;muons",1000,1,2);
     TH1F *p_eta = new TH1F("p_eta",";#eta;muons",100,2,3);
     TH1F *p_dphi = new TH1F("p_dphi",";#Delta#phi;muons",200,-0.2,0.4);
+    TH1F *p_dphi_pos = new TH1F("p_dphi_pos",";atan(y/x);muons",200,1.5,1.7);
+    TH1F *p_dphi_mom = new TH1F("p_dphi_mom",";atan(py/px);muons",200,1.5,1.9);
+    TH2F *p_dphi_pos_vs_mom = new TH2F("p_dphi_pos_vs_mom",";atan(py/px);atan(y/x);muons",200,1.5,1.9,200,1.5,1.7);
 
     unsigned nEvts = 0;
     
@@ -109,15 +115,20 @@ int plotMomentumMuonsBHCAL(){
 	p_trkphi->Fill(std::atan2(py,px));
 	p_eta->Fill(etafunc(x,y,z));
 	p_dphi->Fill(std::atan2(py,px)-std::atan2(y,x));
-      }//read input file
+	p_dphi_pos->Fill(std::atan2(y,x));
+	p_dphi_mom->Fill(std::atan2(py,px));
+ 	p_dphi_pos_vs_mom->Fill(std::atan2(py,px),std::atan2(y,x));
+     }//read input file
       
     }//loop on files
     std::cout << " -- Read " << nEvts << " events." << std::endl;
 
+    sprintf(buf,"#mu p_{T} = %d GeV, #eta=%3.1f",et[iE],eta);
 
     myc->cd();
     gStyle->SetOptStat("eMR");
     p_phi->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
     std::ostringstream lsave;
     lsave << "PLOTS/phi_eta" << eta << "_et" << et[iE] << ".pdf";
     myc->Print(lsave.str().c_str());
@@ -125,6 +136,7 @@ int plotMomentumMuonsBHCAL(){
     myc->cd();
     gStyle->SetOptStat("eMR");
     p_trkphi->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
     lsave.str("");
     lsave << "PLOTS/trkphi_eta" << eta << "_et" << et[iE] << ".pdf";
     myc->Print(lsave.str().c_str());
@@ -132,13 +144,39 @@ int plotMomentumMuonsBHCAL(){
     myc->cd();
     gStyle->SetOptStat("eMR");
     p_dphi->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
     lsave.str("");
     lsave << "PLOTS/deltaphi_eta" << eta << "_et" << et[iE] << ".pdf";
     myc->Print(lsave.str().c_str());
 
     myc->cd();
     gStyle->SetOptStat("eMR");
+    p_dphi_pos->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
+    lsave.str("");
+    lsave << "PLOTS/deltaphi_position_eta" << eta << "_et" << et[iE] << ".pdf";
+    myc->Print(lsave.str().c_str());
+
+    myc->cd();
+    gStyle->SetOptStat("eMR");
+    p_dphi_mom->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
+    lsave.str("");
+    lsave << "PLOTS/deltaphi_momentum_eta" << eta << "_et" << et[iE] << ".pdf";
+    myc->Print(lsave.str().c_str());
+
+    myc->cd();
+    gStyle->SetOptStat("eMR");
+    p_dphi_pos_vs_mom->Draw("colz");
+    lat.DrawLatexNDC(0.2,0.85,buf);
+    lsave.str("");
+    lsave << "PLOTS/deltaphi_posvsmom_eta" << eta << "_et" << et[iE] << ".pdf";
+    myc->Print(lsave.str().c_str());
+
+    myc->cd();
+    gStyle->SetOptStat("eMR");
     p_eta->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
     lsave.str("");
     lsave << "PLOTS/eta_eta" << eta << "_et" << et[iE] << ".pdf";
     myc->Print(lsave.str().c_str());
@@ -146,6 +184,7 @@ int plotMomentumMuonsBHCAL(){
     myc->cd();
     gStyle->SetOptStat("eMR");
     p_momentum->Draw();
+    lat.DrawLatexNDC(0.2,0.85,buf);
     lsave.str("");
     lsave << "PLOTS/p_eta" << eta << "_et" << et[iE] << ".pdf";
     myc->Print(lsave.str().c_str());
