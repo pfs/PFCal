@@ -70,7 +70,14 @@ public:
     v_HGCALEE_v8=60,
     v_HGCALHE_v8=61,
     v_HGCALBE_v8=62,
-    v_HGCAL_v8=63,
+    v_HGCAL_v8     = 63,  //TDR
+    v_HGCALSci_v8  = 630, //TDR EE+FH Si air
+    v_HGCAL_v9     = 64,  //24 uniform
+    v_HGCALSci_v9  = 640, //24 Si air
+    v_HGCAL_v10    = 65,  //9+9
+    v_HGCALSci_v10 = 650, //9+9 Si air
+    v_HGCAL_v11    = 66,  //18 uniform
+    v_HGCALSci_v11 = 660, //18 Si air
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
@@ -97,7 +104,7 @@ public:
 		       std::string absThickPb="1,1,1,1,1,2.1,2.1,2.1,2.1,2.1,4.4,4.4,4.4,4.4",
 		       std::string dropLayer="");
 
-  void buildHGCALFHE(const unsigned aVersion);
+  void buildHGCALFHE(const unsigned aVersion,bool doAir=false);
   void buildHGCALBHE(const unsigned aVersion);
   void buildHF();
   /**
