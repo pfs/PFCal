@@ -410,7 +410,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
         //add HCAL	
 	if(version_!=v_HGCALEE_v8){
 	  //FH = FH+BH silicon version = 24 layers
-	  buildHGCALFHE(8);
+	  buildHGCALFHE(8,doAir);
 	  //BH = FH+BH scintillator version = 16 layers
 	  buildHGCALBHE(8);
 	}
@@ -730,20 +730,14 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion,bool doAir){
     G4double lastFH_z0pos(4071.53);
     G4double lastBH_z0pos(5129.2);
     if(version_==v_HGCAL_v9 || version_==v_HGCALSci_v9) {
-      //fhSSteelThick = 53.2*mm;
-      //bhSSteelThick = 53.2*mm;
       fhSSteelThick = 53*mm;
       bhSSteelThick = 53*mm;
     }
     if(version_==v_HGCAL_v10 || version_==v_HGCALSci_v10) {
-      //fhSSteelThick = 51.15*mm;
-      //bhSSteelThick = 95.61*mm;
       fhSSteelThick = 60*mm;
       bhSSteelThick = 97*mm;
     }
     if(version_==v_HGCAL_v11 || version_==v_HGCALSci_v11) {
-      //fhSSteelThick = 74.69*mm;
-      //bhSSteelThick = 74.69*mm;
       fhSSteelThick = 76*mm;
       bhSSteelThick = 76*mm;
     }
@@ -798,12 +792,13 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion,bool doAir){
     firstMixedlayer_ = m_caloStruct.size();
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
     m_minEta.push_back(getEtaFromRZ(rLimit,Total_thick+m_z0pos)); m_maxEta.push_back(m_maxEta0);
-    cout << "First mixed layer @ z=" << Total_thick+m_z0pos 
-         << " covers [" << getEtaFromRZ(rLimit,Total_thick+m_z0pos) << "," << m_maxEta0 << "] in eta" 
-         << endl;
     curIdx=m_caloStruct.size()-1;
+    cout << "First mixed layer @ z=" << Total_thick+m_z0pos 
+         << " covers [" << m_minEta[curIdx] << "," << m_maxEta[curIdx] << "] in eta" 
+         << endl;
     Total_thick += m_caloStruct[curIdx].getTotalThick();
     nmixedSiFH++;
+    cout << "\t ending at z=" << Total_thick+m_z0pos << endl;
 
     lThick.clear();
     lEle.clear();    
@@ -830,7 +825,7 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion,bool doAir){
     }while(Total_thick<=lastFH_z0pos-m_z0pos);
     cout << "Placed " << nmixedSiFH << " Si layers for FH" << endl
          << "Last FH layer @ z=" << Total_thick+m_z0pos 
-         << " covers [" << getEtaFromRZ(rLimit,Total_thick+m_z0pos) <<  "," << m_maxEta0 << "] in eta" 
+         << " covers [" << m_minEta[curIdx] <<  "," << m_maxEta[curIdx] << "] in eta" 
          << endl;
 
     //CE-H layers (13-24 in the TDR)
@@ -849,8 +844,9 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion,bool doAir){
     }while(Total_thick<=lastBH_z0pos-m_z0pos);
     cout << "Placed " << nbhSiLayers << " Si layers for BH" << endl
          << "Last BH layer @ z=" << Total_thick+m_z0pos 
-         << " covers [" << getEtaFromRZ(rLimit,Total_thick+m_z0pos) <<  "," << m_maxEta0 << "] in eta" 
+         << " covers [" << m_minEta[curIdx] << "," << m_maxEta[curIdx] << "] in eta"      
          << endl;
+    nbhLayers_=nbhSiLayers;
 
     //end of last layer + Gandalf (back disk)
     lThick.clear();
@@ -962,8 +958,27 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     G4double pcbThick = 1.6*mm;
     G4double fhSSteelThick = 35*mm;
     G4double bhSSteelThick = 68*mm;
+    G4double m_z0pos(2980);
+    G4double lastFH_z0pos(4071.53);
+    if(version_==v_HGCAL_v9 || version_==v_HGCALSci_v9) {
+      fhSSteelThick = 53*mm;
+      bhSSteelThick = 53*mm;
+    }
+    if(version_==v_HGCAL_v10 || version_==v_HGCALSci_v10) {
+      fhSSteelThick = 60*mm;
+      bhSSteelThick = 97*mm;
+    }
+    if(version_==v_HGCAL_v11 || version_==v_HGCALSci_v11) {
+      fhSSteelThick = 76*mm;
+      bhSSteelThick = 76*mm;
+    }
 
-    //back of layer 8+layer9 scint.
+    size_t curIdx(m_caloStruct.size()-1);
+    G4double Total_thick(0.);
+    for(size_t i=0; i<firstMixedlayer_; i++) Total_thick += m_caloStruct[i].getTotalThick();
+
+    //back of last pure Si layer
+    int nmixedSciFH(0);
     lThick.push_back(pcbThick);lEle.push_back("PCB");
     lThick.push_back(airThick);lEle.push_back("Air");
     lThick.push_back(pcbThick);lEle.push_back("PCB");
@@ -971,51 +986,59 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     lThick.push_back(1*mm);lEle.push_back("Air");
     lThick.push_back(fhSSteelThick);lEle.push_back("SSteel");
     lThick.push_back(6*mm);lEle.push_back("Cu");
+    //start of first Sci layer
+    G4double firstSciOverburden(pcbThick+1.2*mm+3.0*mm);
     lThick.push_back(pcbThick);lEle.push_back("PCB");
     lThick.push_back(1.2*mm);lEle.push_back("Air");
     lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
     m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1450,3920.7));
+    m_minEta.push_back(m_minEta0);m_maxEta.push_back(m_minEta[firstMixedlayer_]);
+    curIdx=m_caloStruct.size()-1;
+    cout << "First mixed layer (Sci half) starts at z=" << Total_thick+m_z0pos 
+         << " covers [" << m_minEta[curIdx] << "," << m_maxEta[curIdx] << "] in eta" 
+         << endl;
+    Total_thick += m_caloStruct[curIdx].getTotalThick();
+    nmixedSciFH++;
+    cout << "\t ending at z=" << Total_thick+m_z0pos << endl;
 
     //CE-H-scint layers 10-12
     lThick.clear();
     lEle.clear();
-    lThick.push_back(0.5*mm);lEle.push_back("Air");
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(1*mm);lEle.push_back("Cu");
-    lThick.push_back(1*mm);lEle.push_back("Air");
-    lThick.push_back(fhSSteelThick);lEle.push_back("SSteel");
-    lThick.push_back(6*mm);lEle.push_back("Cu");
-    lThick.push_back(pcbThick);lEle.push_back("PCB");
-    lThick.push_back(1.2*mm);lEle.push_back("Air");
-    lThick.push_back(3.0*mm);lEle.push_back("Scintillator");
-    for(unsigned i=0; i<3; i++) {
+    lThick.push_back(0.5*mm);         lEle.push_back("Air");
+    lThick.push_back(pcbThick);       lEle.push_back("PCB");
+    lThick.push_back(1*mm);           lEle.push_back("Cu");
+    lThick.push_back(1*mm);           lEle.push_back("Air");
+    lThick.push_back(fhSSteelThick);  lEle.push_back("SSteel");
+    lThick.push_back(6*mm);           lEle.push_back("Cu");
+    lThick.push_back(pcbThick);       lEle.push_back("PCB");
+    lThick.push_back(1.2*mm);         lEle.push_back("Air");
+    lThick.push_back(3.0*mm);         lEle.push_back("Scintillator");
+    do{
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    }
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,3969.7));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1325,4020.6));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1225,4071.5));
+      curIdx=m_caloStruct.size()-1;
+      m_minEta.push_back(m_minEta0); m_maxEta.push_back(m_minEta[firstMixedlayer_+nmixedSciFH]);
+      Total_thick += m_caloStruct[curIdx].getTotalThick();
+      nmixedSciFH++;
+    }while(Total_thick<=lastFH_z0pos-m_z0pos+firstSciOverburden);
+    cout << "Placed " << nmixedSciFH << " Sci layers for FH" << endl
+         << "Last Sci FH layer @ z=" << Total_thick+m_z0pos
+         << " covers [" << m_minEta[curIdx] << "," << m_maxEta[curIdx] << "] in eta"
+         << endl;
 
     //CE-H-scint layers 13-24
+    int nbhSciLayers(0);
     lThick[4] = bhSSteelThick;
-    for(unsigned i=0; i<12; i++) {
+    do{
       m_caloStruct.push_back( SamplingSection(lThick,lEle) );
-    }
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1110,4122.4));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(1050,4206.3));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(950,4290.2));
-
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4374.1));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4458));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4541.9));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4625.8));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4709.7));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4793.6));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4877.5));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,4961.4));
-    m_minEta.push_back(m_minEta0);m_maxEta.push_back(getEtaFromRZ(900,5045.3));
-
-
+      curIdx=m_caloStruct.size()-1;
+      m_minEta.push_back(m_minEta0); m_maxEta.push_back(m_minEta[firstMixedlayer_+nmixedSciFH+nbhSciLayers]);
+      Total_thick += m_caloStruct[curIdx].getTotalThick();
+      nbhSciLayers++;
+    }while(nbhSciLayers<nbhLayers_);
+    cout << "Placed " << nbhSciLayers << " Sci layers for BH" << endl
+         << "Last Sci BH layer @ z=" << Total_thick+m_z0pos 
+         << " covers [" << m_minEta[curIdx] << "," << m_maxEta[curIdx] << "] in eta"
+         << endl;
 
     //end of last layer - only if building BH only
     if (version_ == v_HGCALBE_v8){
@@ -1291,7 +1314,11 @@ void DetectorConstruction::UpdateCalorSize(){
     m_CalorSizeXY=2800*2;//use full length for making hexagon map
     m_minRadius = 150;
     m_maxRadius = m_CalorSizeXY;
-    if (version_ != v_HGCAL_v8 && version_ != v_HGCALEE_v8) {
+    if (version_ != v_HGCALEE_v8 
+        && version_ != v_HGCAL_v8  && version_ != v_HGCALSci_v8
+        && version_ != v_HGCAL_v9  && version_ != v_HGCALSci_v9
+        && version_ != v_HGCAL_v10 && version_ != v_HGCALSci_v10
+        && version_ != v_HGCAL_v11 && version_ != v_HGCALSci_v11 ) {
       m_minEta.resize(m_caloStruct.size(),m_minEta0);
       m_maxEta.resize(m_caloStruct.size(),m_maxEta0);
     }
@@ -1302,7 +1329,13 @@ void DetectorConstruction::UpdateCalorSize(){
     m_z0pos = 2990;//3170;
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
     else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
-    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8) m_z0pos = 2980;
+    else if (version_ == v_HGCALEE_v8 
+             || version_ == v_HGCAL_v8  || version_ == v_HGCALSci_v8 
+             || version_ == v_HGCAL_v9  || version_ == v_HGCALSci_v9
+             || version_ == v_HGCAL_v10 || version_ == v_HGCALSci_v10
+             || version_ == v_HGCAL_v11 || version_ == v_HGCALSci_v11
+             )
+      m_z0pos = 2980;
     else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7;
     if (doHF_){
       m_z0HF=11100;
@@ -1337,6 +1370,7 @@ void DetectorConstruction::UpdateCalorSize(){
     G4cout << "[DetectorConstruction][UpdateCalorSize] Eta ranges: " << G4endl;
     double tmpz=m_z0pos;
     G4cout << "check sizes: calostruct " << m_caloStruct.size() << " etamin " << m_minEta.size() << " etamax " << m_maxEta.size() << std::endl;
+    G4cout << "In the following the z0 position is a simple sum from thicknesses prior to re-arranging the mixed sectors" << endl;
     for (unsigned il(0); il<m_caloStruct.size(); ++il){
       G4cout << "Layer #" << il << " z0= " << tmpz << " eta " << m_minEta[il] << " " << m_maxEta[il]<< G4endl;
       tmpz += m_caloStruct[il].Total_thick;
@@ -1484,7 +1518,7 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 		   << " L0=" << m_caloStruct[i].ele_L0[ie] << " zpos=" ;
 
 	    if (i>=firstHFlayer_) G4cout << m_z0HF+zOverburden ;
-	    else G4cout << m_z0pos+zOverburden ;
+	    else                  G4cout << m_z0pos+zOverburden ;
 	    G4cout << "mm w=" << m_caloStruct[i].ele_thick[ie] << "mm";
 	    //G4cout << " d=" << m_materials[eleName]->GetDensity();
 	  //G4cout << G4endl;
@@ -1530,7 +1564,12 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }//loop on elements
 
       //add support cone, for EE only
-      if (i<28 && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 || version_ ==  v_HGCAL_v8)) {
+      if (i<28 && (version_ == v_HGCALEE_v6 || version_ ==  v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ ==  v_HGCAL_v7 || version_ == v_HGCALEE_v8 
+                   || version_ ==  v_HGCAL_v8  || version_ == v_HGCALSci_v8
+                   || version_ ==  v_HGCAL_v9  || version_ == v_HGCALSci_v9
+                   || version_ ==  v_HGCAL_v10 || version_ == v_HGCALSci_v10
+                   || version_ ==  v_HGCAL_v11 || version_ == v_HGCALSci_v11 ) )
+        {
 	//remove support cone for moderator
 	//if (i==0) {
 	//totalThicknessLayer -= 100;

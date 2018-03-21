@@ -187,6 +187,7 @@ private:
   unsigned firstHFlayer_;
   unsigned firstMixedlayer_;
   unsigned firstScintlayer_;
+  unsigned nbhLayers_;
 
   std::vector<G4double> absThickW_;
   std::vector<G4double> absThickPb_;
