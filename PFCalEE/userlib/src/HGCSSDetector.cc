@@ -9,6 +9,41 @@ HGCSSDetector & theDetector(){
   return lDet;
 }
 
+//
+void HGCSSDetector::buildDetector( HGCSSInfo * info) {
+
+  using namespace std;
+
+  bypassRadius_ = false;  
+  reset();
+
+  //
+  size_t nsens(info->sensitiveZ().size());
+  indices_.clear();
+  indices_.resize(7,0);
+  indices_[0] = 0;
+  indices_[1] = 10;
+  indices_[2] = 20;
+  indices_[3] = 28;
+  indices_[4] = 53;
+  indices_[5] = 57;
+  indices_[6] = nsens;
+  sensitiveZ_.resize(nsens,0);
+  etaBoundary_.resize(nsens,0);
+  for(size_t i=0; i<nsens; i++) {
+    sensitiveZ_[i]  = info->sensitiveZ()[i];
+    etaBoundary_[i] = info->etaBoundaryMin()[i];    
+    if(info->version()==63)
+      {
+        if(i==52) etaBoundary_[i]=0;
+        if(i>52)  etaBoundary_[i]=info->etaBoundaryMax()[i];
+      }
+  }
+  initSubDetectors(false,info->version());
+  finishInitialisation();
+}
+
+//
 void HGCSSDetector::buildDetector(const unsigned versionNumber,
 				  bool concept,
 				  bool isCaliceHcal,
@@ -17,6 +52,12 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   bypassRadius_ = bypassR;
   reset();
   initialiseIndices(versionNumber);
+  initSubDetectors(isCaliceHcal,versionNumber);
+  finishInitialisation();
+}
+
+//
+void HGCSSDetector::initSubDetectors(bool isCaliceHcal,int versionNumber) { 
   HGCSSSubDetector FECAL;
   FECAL.type = DetectorEnum::FECAL;
   FECAL.name = "FECAL";
@@ -92,7 +133,8 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BHCAL.layerIdMin = indices_[4];
   BHCAL.layerIdMax = indices_[5];
   BHCAL.mipWeight = 1./0.63;//was 1.49 for 9mm scint
-  if (versionNumber>59 && versionNumber<64) BHCAL.mipWeight = 1./0.497;//for 3mm scint, v8
+  if ((versionNumber>59 && versionNumber<67) || (versionNumber>=630 && versionNumber<=660)) 
+    BHCAL.mipWeight = 1./0.497;//for 3mm scint, v8
   BHCAL.absWeight = 1.0;//92.196/5.848;
   BHCAL.gevWeight = 1.0;
   BHCAL.gevOffset = 0.0;
@@ -125,12 +167,9 @@ void HGCSSDetector::buildDetector(const unsigned versionNumber,
   BHCAL2.isScint = true;
   
   if (BHCAL2.nLayers()>0) theDetector().addSubdetector(BHCAL2);
-  
-  finishInitialisation();
-  
 }
 
-
+//
 const HGCSSSubDetector & HGCSSDetector::subDetectorByLayer(const unsigned aLayer){
   unsigned section = getSection(aLayer);
   return subdets_[section];

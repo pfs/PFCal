@@ -35,7 +35,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 					   std::string absThickW,
 					   std::string absThickPb,
 					   std::string dropLayer) : 
-  version_(ver), model_(mod), shape_(shape), addPrePCB_(false)
+  version_(ver), model_(mod), shape_(shape), addPrePCB_(false), sensitiveZ_h_(0),etaBoundaryMin_h_(0),etaBoundaryMax_h_(0)
 {
 
   doHF_ = false;
@@ -1432,6 +1432,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   m_logicWorld = new G4LogicalVolume(m_solidWorld, m_materials["Air"], "Wlog");
   m_physWorld = new G4PVPlacement(0, G4ThreeVector(pos_x,pos_y,pos_z), m_logicWorld, "Wphys", experimentalHall_log, false, 0);
 
+  cout << "Total sectors:" << m_nSectors << endl;
   for (unsigned iS(0); iS<m_nSectors; ++iS){
     G4double minL = m_sectorWidth*iS;
     buildSectorStack(iS,minL,m_sectorWidth-m_interSectorWidth);
@@ -1604,10 +1605,24 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
 	aRegion->AddRootLogicalVolume(m_logicAl[nlogical-1]);
       }
     }//loop on layers
+
+  sensitiveZ_h_ = new TH1F("sensitiveZ",";Layer;z",m_caloStruct.size(),0,m_caloStruct.size());
+  sensitiveZ_h_->SetDirectory(0);
+  etaBoundaryMin_h_ = new TH1F("etaBoundaryMin",";Layer;min#eta",m_caloStruct.size(),0,m_caloStruct.size());
+  etaBoundaryMin_h_->SetDirectory(0);
+  etaBoundaryMax_h_ = new TH1F("etaBoundaryMin",";Layer;min#eta",m_caloStruct.size(),0,m_caloStruct.size());
+  etaBoundaryMax_h_->SetDirectory(0);
   std::cout << " Z positions of sensitive layers: " << std::endl;
   for (size_t i=0; i<m_caloStruct.size(); i++) {
     std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" << std::endl;
+    sensitiveZ_h_->SetBinContent(i+1, m_caloStruct[i].sensitiveZ);
+    if (model_ == DetectorConstruction::m_FULLSECTION)
+      {
+        etaBoundaryMin_h_->SetBinContent(i+1, m_minEta[i]);
+        etaBoundaryMax_h_->SetBinContent(i+1, m_maxEta[i]);
+      }
   }
+
   
   //dummy layer to get genparticles
   std::string eleName = "DummyLayer";

@@ -7,6 +7,8 @@
 #include <map>
 #include "TH2D.h"
 
+#include "HGCSSInfo.hh"
+
 enum DetectorEnum {
   FECAL,
   MECAL,
@@ -424,7 +426,6 @@ public:
       etaBoundary_[49] = 2.39155;
       etaBoundary_[50] = 2.40832;
       etaBoundary_[51] = 2.42483;
-
       etaBoundary_[53] = 1.72042;
       etaBoundary_[54] = 1.81718;
       etaBoundary_[55] = 1.82927;
@@ -441,7 +442,6 @@ public:
       etaBoundary_[66] = 2.39155;
       etaBoundary_[67] = 2.40832;
       etaBoundary_[68] = 2.42483;
-
     }
     else if (versionNumber == 110){
       indices_[0] = 0;
@@ -468,6 +468,8 @@ public:
 		     bool concept=true,
 		     bool isCaliceHcal=false,
 		     bool bypassR=false);
+
+  void buildDetector(HGCSSInfo *info);
 
   const HGCSSSubDetector & subDetectorByLayer(const unsigned aLayer);
 
@@ -546,6 +548,8 @@ private:
   HGCSSDetector(){
     bypassRadius_ = false;
   };
+
+  void initSubDetectors(bool isCaliceHcal,int versionNumber);
 
   ~HGCSSDetector(){
     reset();

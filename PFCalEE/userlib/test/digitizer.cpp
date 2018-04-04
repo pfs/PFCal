@@ -538,7 +538,11 @@ int main(int argc, char** argv){//main
 
   bool bypassR = false;
   if (isTBsetup) bypassR = true;
-  myDetector.buildDetector(versionNumber,concept,isCaliceHcal,bypassR);
+  bool useSimInfo(true);
+  if(useSimInfo)
+    myDetector.buildDetector(info);
+  else
+    myDetector.buildDetector(versionNumber,concept,isCaliceHcal,bypassR);
 
   //initialise calibration class
   HGCSSCalibration mycalib(inFilePath,bypassR,nSiLayers);

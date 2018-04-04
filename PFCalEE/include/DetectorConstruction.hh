@@ -9,6 +9,8 @@
 #include <map>
 #include <string>
 
+#include "TH1F.h"
+
 class G4VSolid;
 class G4Box;
 class G4LogicalVolume;
@@ -165,6 +167,9 @@ public:
   G4double GetMinEta() { return m_minEta0; }
   G4double GetMaxEta() { return m_maxEta0; }
 
+  TH1F *getSensitiveZHisto(){ return sensitiveZ_h_; }
+  TH1F *getEtaBoundaryHisto(bool isMin) { return isMin ? etaBoundaryMin_h_ : etaBoundaryMax_h_; }
+
   /**
      @short build the detector
    */
@@ -244,6 +249,9 @@ private:
   std::vector<G4LogicalVolume*>   m_logicAbs;    //pointer to the logical absorber volumes situated just before the si
 
   DetectorMessenger* m_detectorMessenger;  //pointer to the Messenger
+
+  TH1F *sensitiveZ_h_,*etaBoundaryMin_h_,*etaBoundaryMax_h_;
+
 };
 
 

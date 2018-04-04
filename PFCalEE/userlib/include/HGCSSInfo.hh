@@ -5,6 +5,7 @@
 #include "Rtypes.h"
 #include <sstream>
 #include <map>
+//#include "TH1F.h"
 
 class HGCSSInfo{
 
@@ -60,6 +61,30 @@ public:
     return calorSizeXY_;
   };
 
+  inline void sensitiveZ(std::vector<double> &sensZ) {
+    sensitiveZ_.clear();
+    for(auto z : sensZ) sensitiveZ_.push_back(z);
+  }
+  inline const std::vector<double> &sensitiveZ() {
+    return sensitiveZ_;
+  }
+
+  inline void etaBoundaryMin(std::vector<double> &etaMin) {
+    etaBoundaryMin_.clear();
+    for(auto z : etaMin) etaBoundaryMin_.push_back(z);
+  }
+  inline const std::vector<double> &etaBoundaryMin() {
+    return etaBoundaryMin_;
+  }
+
+  inline void etaBoundaryMax(std::vector<double> &etaMax) {
+    etaBoundaryMax_.clear();
+    for(auto z : etaMax) etaBoundaryMax_.push_back(z);
+  }
+  inline const std::vector<double> &etaBoundaryMax() {
+    return etaBoundaryMax_;
+  }
+
 private:
 
   int version_;
@@ -67,11 +92,9 @@ private:
   double cellsize_;
   double calorSizeXY_;
   unsigned shape_;
+  std::vector<double> sensitiveZ_,etaBoundaryMin_,etaBoundaryMax_;
 
-  ClassDef(HGCSSInfo,2);
-
-
-
+  ClassDef(HGCSSInfo,3);
 };
 
 

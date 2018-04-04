@@ -17,6 +17,7 @@
 #include "HGCSSSimHit.hh"
 #include "HGCSSGenParticle.hh"
 #include "HGCSSGeometryConversion.hh"
+#include "HGCSSInfo.hh"
 
 #include <vector>
 #include <map>
@@ -49,6 +50,9 @@ public:
   bool isFirstVolume(const std::string volname) const;
 
 private:
+
+  void fillHGCSSInfo();
+
   RunAction*  runAct;
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
@@ -65,7 +69,7 @@ private:
   EventActionMessenger*  eventMessenger;
   //std::ofstream fout_;
   unsigned shape_;
-
+  HGCSSInfo *info_;
 };
 
 #endif

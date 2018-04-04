@@ -4,8 +4,6 @@
 #include "EventActionMessenger.hh"
 #include "DetectorConstruction.hh"
 
-#include "HGCSSInfo.hh"
-
 #include "G4RunManager.hh"
 #include "G4Event.hh"
 #include "G4UnitsTable.hh"
@@ -14,7 +12,7 @@
 #include <iomanip>
 
 //
-EventAction::EventAction()
+EventAction::EventAction():info_(0)
 {
   runAct = (RunAction*)G4RunManager::GetRunManager()->GetUserRunAction();
   eventMessenger = new EventActionMessenger(this);
@@ -22,25 +20,13 @@ EventAction::EventAction()
   outF_=TFile::Open("PFcal.root","RECREATE");
   outF_->cd();
 
-  double xysize = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetCalorSizeXY();
 
-  shape_ = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getShape();
-
-  //save some info
-  HGCSSInfo *info = new HGCSSInfo();
-  info->calorSizeXY(xysize);
-  info->cellSize(CELL_SIZE_X);
-  info->model(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getModel());
-  info->version(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->getVersion());
-  info->shape(shape_);
-  std::cout << " -- check Info: version = " << info->version()
-	    << " model = " << info->model()
-	    << " shape = " << shape_
-	    << std::endl;
-  outF_->WriteObjectAny(info,"HGCSSInfo","Info");
+  DetectorConstruction *detConst(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction()));
+  shape_ = detConst->getShape();
+  double xysize = detConst->GetCalorSizeXY();
 
   //honeycomb or diamond or triangles
-  geomConv_ = new HGCSSGeometryConversion(info->model(),CELL_SIZE_X);
+  geomConv_ = new HGCSSGeometryConversion(detConst->getModel(),CELL_SIZE_X);
   if (shape_==2) geomConv_->initialiseDiamondMap(xysize,10.);
   else if (shape_==3) geomConv_->initialiseTriangleMap(xysize,10.*sqrt(2.));
   else if (shape_==1) geomConv_->initialiseHoneyComb(xysize,CELL_SIZE_X);
@@ -50,7 +36,6 @@ EventAction::EventAction()
   double etamax = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMaxEta();
   geomConv_->initialiseSquareMap1(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),0.01745);//eta phi segmentation
   geomConv_->initialiseSquareMap2(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),0.02182);//eta phi segmentation
-  
 
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
@@ -71,6 +56,7 @@ EventAction::~EventAction()
 {
   outF_->cd();
   tree_->Write();
+
   outF_->Close();
   //fout_.close();
   delete eventMessenger;
@@ -220,4 +206,37 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
   hitvec_.clear();
   alhitvec_.clear();
   ssvec_.clear();
+
+  fillHGCSSInfo();
+}
+
+void EventAction::fillHGCSSInfo() {
+
+  if(info_) return;
+
+  //save some info regarding the detector construction
+  DetectorConstruction *detConst(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction()));
+  TH1F *sensZ_h=detConst->getSensitiveZHisto();
+  TH1F *etaMin_h=detConst->getEtaBoundaryHisto(true);
+  TH1F *etaMax_h=detConst->getEtaBoundaryHisto(false);  
+  std::vector<double> sensZ,etaMin,etaMax;
+  for(int xbin=1; xbin<=sensZ_h->GetNbinsX(); xbin++) {
+    sensZ.push_back( sensZ_h->GetBinContent(xbin) );
+    etaMin.push_back( etaMin_h->GetBinContent(xbin) );
+    etaMax.push_back( etaMax_h->GetBinContent(xbin) );
+  }
+  info_ = new HGCSSInfo();
+  info_->sensitiveZ(sensZ);
+  info_->etaBoundaryMin(etaMin);
+  info_->etaBoundaryMax(etaMax);  
+  info_->calorSizeXY(detConst->GetCalorSizeXY());
+  info_->cellSize(CELL_SIZE_X);
+  info_->model(detConst->getModel());
+  info_->version(detConst->getVersion());
+  info_->shape(shape_);
+  std::cout << " -- check Info: version = " << info_->version()
+	    << " model = " << info_->model()
+	    << " shape = " << shape_
+	    << std::endl;
+  outF_->WriteObjectAny(info_,"HGCSSInfo","Info");
 }
