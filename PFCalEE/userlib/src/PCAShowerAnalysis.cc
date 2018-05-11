@@ -1,7 +1,7 @@
 //#include "RecoEgamma/Examples/interface/PCAShowerAnalysis.h"
 #include "PCAShowerAnalysis.h"
 
-#include "TMatrixD.h"
+#include "TMatrixDfwd.h"
 #include "TVectorD.h"
 
 PCAShowerAnalysis::PCAShowerAnalysis ( bool segmented, 
