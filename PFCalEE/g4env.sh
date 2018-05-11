@@ -9,13 +9,13 @@ export G4DAWNFILE_DEST_DIR=${USERBASE}/DawnFiles/
 export HEPMC_DIR=/afs/cern.ch/sw/lcg/external/HepMC/2.06.08/${ARCH}/
 export FASTJET_INSTALL=/afs/cern.ch/sw/lcg/external/fastjet/3.0.3/${ARCH}/
 cd $G4BASE/9.6.p02/${ARCH}/share/Geant4-9.6.2/geant4make/
-source geant4make.sh
+source `pwd`/geant4make.sh
 cd - &> /dev/null
 #for boost latest version
 export BOOSTSYS=/cvmfs/cms.cern.ch/slc6_amd64_gcc472/external/boost/1.47.0-cms
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$XERCESCROOT/lib:$HEPMC_DIR/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib:$FASTJET_INSTALL/lib:$BOOSTSYS/lib
 #source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/x86_64-slc6/setup.sh
-cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.18/${ARCH}/root/
+cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.07_python2.7/${ARCH}/root/
 source bin/thisroot.sh
 cd - &> /dev/null
 export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin

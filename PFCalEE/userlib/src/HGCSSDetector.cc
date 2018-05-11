@@ -30,15 +30,22 @@ void HGCSSDetector::buildDetector( HGCSSInfo * info) {
   indices_[6] = nsens;
   sensitiveZ_.resize(nsens,0);
   etaBoundary_.resize(nsens,0);
+
+  int transLayer(52);
+  if(info->version()==65 || info->version()==650 || info->version()==66 || info->version()==660) {
+    transLayer  = 46;
+    indices_[4] = 47;
+    indices_[5] = 51;
+  }
+
   for(size_t i=0; i<nsens; i++) {
     sensitiveZ_[i]  = info->sensitiveZ()[i];
     etaBoundary_[i] = info->etaBoundaryMin()[i];    
-    if(info->version()==63)
-      {
-        if(i==52) etaBoundary_[i]=0;
-        if(i>52)  etaBoundary_[i]=info->etaBoundaryMax()[i];
-      }
+    if(info->version()>600 && i<transLayer) { etaBoundary_[i]=0; sensitiveZ_[i]=0; }
+    if(i==transLayer) etaBoundary_[i]=0;
+    if(i>transLayer)  etaBoundary_[i]=info->etaBoundaryMax()[i];
   }
+  
   initSubDetectors(false,info->version());
   finishInitialisation();
 }
