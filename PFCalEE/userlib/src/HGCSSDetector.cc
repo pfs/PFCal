@@ -37,6 +37,11 @@ void HGCSSDetector::buildDetector( HGCSSInfo * info) {
     indices_[4] = 47;
     indices_[5] = 51;
   }
+  if(info->version()==67 || info->version()==670) {
+    transLayer=57;
+    indices_[4]=58;
+    indices_[5]=65;
+  }
 
   for(size_t i=0; i<nsens; i++) {
     sensitiveZ_[i]  = info->sensitiveZ()[i];
@@ -140,7 +145,7 @@ void HGCSSDetector::initSubDetectors(bool isCaliceHcal,int versionNumber) {
   BHCAL.layerIdMin = indices_[4];
   BHCAL.layerIdMax = indices_[5];
   BHCAL.mipWeight = 1./0.63;//was 1.49 for 9mm scint
-  if ((versionNumber>59 && versionNumber<67) || (versionNumber>=630 && versionNumber<=660)) 
+  if ((versionNumber>59 && versionNumber<68) || (versionNumber>=630 && versionNumber<=670)) 
     BHCAL.mipWeight = 1./0.497;//for 3mm scint, v8
   BHCAL.absWeight = 1.0;//92.196/5.848;
   BHCAL.gevWeight = 1.0;

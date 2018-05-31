@@ -329,6 +329,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
     case v_HGCAL_v9:  case v_HGCALSci_v9: 
     case v_HGCAL_v10: case v_HGCALSci_v10: 
     case v_HGCAL_v11: case v_HGCALSci_v11:
+    case v_HGCAL_v12: case v_HGCALSci_v12:
       {
 	G4cout << "[DetectorConstruction] starting v_HGCAL(EE)_v8"<< G4endl;
 	G4double airThick = 1.5*mm;
@@ -337,7 +338,7 @@ DetectorConstruction::DetectorConstruction(G4int ver, G4int mod,
 	G4double wcuThick = 1.4*mm;
 
         bool doAir(false);
-        if(version_==v_HGCALSci_v8 || version_==v_HGCALSci_v9 || version_==v_HGCALSci_v10 || version_==v_HGCALSci_v11) doAir=true;
+        if(version_==v_HGCALSci_v8 || version_==v_HGCALSci_v9 || version_==v_HGCALSci_v10 || version_==v_HGCALSci_v11 || version_==v_HGCALSci_v12) doAir=true;
 
 	std::vector<G4double> lThickL;
 	std::vector<std::string> lEleL;
@@ -741,10 +742,15 @@ void DetectorConstruction::buildHGCALFHE(const unsigned aVersion,bool doAir){
       fhSSteelThick = 76*mm;
       bhSSteelThick = 76*mm;
     }
+    if(version_==v_HGCAL_v12 || version_==v_HGCALSci_v12) {
+      fhSSteelThick = 25.3*mm;
+      bhSSteelThick = 54.9*mm;
+    }
 
     //back of ecal + first layer
     if (version_==v_HGCAL_v8  || version_==v_HGCALSci_v8  || version_==v_HGCAL_v9  || version_==v_HGCALSci_v9 ||
-        version_==v_HGCAL_v10 || version_==v_HGCALSci_v10 || version_==v_HGCAL_v11 || version_==v_HGCALSci_v11 ) {
+        version_==v_HGCAL_v10 || version_==v_HGCALSci_v10 || version_==v_HGCAL_v11 || version_==v_HGCALSci_v11 ||
+        version_==v_HGCAL_v12 || version_==v_HGCALSci_v12) {
       lThick.push_back(pcbThick); lEle.push_back(doAir ? "Air" :"PCB");
       lThick.push_back(airThick); lEle.push_back(doAir ? "Air" :"Air");
       lThick.push_back(pcbThick); lEle.push_back(doAir ? "Air" :"PCB");
@@ -971,6 +977,10 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     if(version_==v_HGCAL_v11 || version_==v_HGCALSci_v11) {
       fhSSteelThick = 76*mm;
       bhSSteelThick = 76*mm;
+    }
+    if(version_==v_HGCAL_v12 || version_==v_HGCALSci_v12) {
+      fhSSteelThick = 25.3*mm;
+      bhSSteelThick = 54.9*mm;
     }
 
     size_t curIdx(m_caloStruct.size()-1);
@@ -1318,7 +1328,8 @@ void DetectorConstruction::UpdateCalorSize(){
         && version_ != v_HGCAL_v8  && version_ != v_HGCALSci_v8
         && version_ != v_HGCAL_v9  && version_ != v_HGCALSci_v9
         && version_ != v_HGCAL_v10 && version_ != v_HGCALSci_v10
-        && version_ != v_HGCAL_v11 && version_ != v_HGCALSci_v11 ) {
+        && version_ != v_HGCAL_v11 && version_ != v_HGCALSci_v11 
+        && version_ != v_HGCAL_v12 && version_ != v_HGCALSci_v12 ) {
       m_minEta.resize(m_caloStruct.size(),m_minEta0);
       m_maxEta.resize(m_caloStruct.size(),m_maxEta0);
     }
@@ -1334,6 +1345,7 @@ void DetectorConstruction::UpdateCalorSize(){
              || version_ == v_HGCAL_v9  || version_ == v_HGCALSci_v9
              || version_ == v_HGCAL_v10 || version_ == v_HGCALSci_v10
              || version_ == v_HGCAL_v11 || version_ == v_HGCALSci_v11
+             || version_ == v_HGCAL_v12 || version_ == v_HGCALSci_v12
              )
       m_z0pos = 2980;
     else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7;
@@ -1569,7 +1581,9 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
                    || version_ ==  v_HGCAL_v8  || version_ == v_HGCALSci_v8
                    || version_ ==  v_HGCAL_v9  || version_ == v_HGCALSci_v9
                    || version_ ==  v_HGCAL_v10 || version_ == v_HGCALSci_v10
-                   || version_ ==  v_HGCAL_v11 || version_ == v_HGCALSci_v11 ) )
+                   || version_ ==  v_HGCAL_v11 || version_ == v_HGCALSci_v11 
+                   || version_ ==  v_HGCAL_v12 || version_ == v_HGCALSci_v12
+                   ) )
         {
 	//remove support cone for moderator
 	//if (i==0) {

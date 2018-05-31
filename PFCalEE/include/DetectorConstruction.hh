@@ -80,6 +80,8 @@ public:
     v_HGCALSci_v10 = 650, //9+9 Si air
     v_HGCAL_v11    = 66,  //18 uniform
     v_HGCALSci_v11 = 660, //18 Si air
+    v_HGCAL_v12    = 67,  //15+15
+    v_HGCALSci_v12 = 670, //15+15 Si air
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,

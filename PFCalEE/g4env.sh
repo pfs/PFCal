@@ -15,7 +15,7 @@ cd - &> /dev/null
 export BOOSTSYS=/cvmfs/cms.cern.ch/slc6_amd64_gcc472/external/boost/1.47.0-cms
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$XERCESCROOT/lib:$HEPMC_DIR/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib:$FASTJET_INSTALL/lib:$BOOSTSYS/lib
 #source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/x86_64-slc6/setup.sh
-cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.19/${ARCH}/root/
+cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.18/${ARCH}/root/
 source bin/thisroot.sh
 cd - &> /dev/null
 export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin

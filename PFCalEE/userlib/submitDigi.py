@@ -195,6 +195,10 @@ elif opt.version in [66,660]:
     granularity='0-59:1'
     noise='0-51:0.13,53-59:0.15'
     threshold='0-59:5'
+elif opt.version in [67,670]:
+    granularity='0-76:1'
+    noise='0-56:0.13,57-76:0.15'
+    threshold='0-76:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'
