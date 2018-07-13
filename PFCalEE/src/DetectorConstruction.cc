@@ -1329,7 +1329,7 @@ void DetectorConstruction::UpdateCalorSize(){
     m_z0pos = 2990;//3170;
     if (version_ == v_HGCALEE_v5 || version_ == v_HGCAL_v5 || version_ == v_HGCALEE_v5_gap4 || version_ == v_HGCAL_v5_gap4) m_z0pos = 2990;//3170;
     else if (version_ == v_HGCALEE_v6 || version_ == v_HGCAL_v6 || version_ == v_HGCALEE_v7 || version_ == v_HGCAL_v7 || version_ == v_HGCAL_v7_HF ||version_ == v_HGCALEE_v624 || version_ == v_HGCALEE_v618) m_z0pos = 3070;
-    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8) m_z0pos = 2980;
+    else if (version_ == v_HGCALEE_v8 || version_ == v_HGCAL_v8 || (version_ >= v_HGCAL_v80 && version_ <= v_HGCAL_v85)) m_z0pos = 2980;
     else if(version_ == v_HGCALBE_v8) m_z0pos=3920.7; 
     if (doHF_){
       m_z0HF=11100;
@@ -1593,9 +1593,22 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
       }
     }//loop on layers
   std::cout << " Z positions of sensitive layers: " << std::endl;
-  for (size_t i=0; i<m_caloStruct.size(); i++) {
-    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << ";" << std::endl;
-  }
+  
+  std::cout << "****************** DetectorConstruction *************************" << endl;
+  std::cout << "std::vector<float> sensZ={";
+  for (size_t i=0; i<m_caloStruct.size(); i++)
+    std::cout << m_caloStruct[i].sensitiveZ << ",";
+  std::cout << "};" << std::endl;
+  std::cout << "std::vector<float> etaMin={";
+  for (size_t i=0; i<m_caloStruct.size(); i++)
+    std::cout << m_minEta[i] << ",";
+  std::cout << "};" << std::endl;
+  std::cout << "std::vector<float> etaMax={";
+  for (size_t i=0; i<m_caloStruct.size(); i++)
+    std::cout << m_maxEta[i] << ",";
+  std::cout << "};" << std::endl;
+  std::cout << "******************* *************************" << endl;
+
   
   //dummy layer to get genparticles
   std::string eleName = "DummyLayer";
