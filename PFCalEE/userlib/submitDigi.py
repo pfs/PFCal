@@ -31,6 +31,7 @@ parser.add_option('-S', '--no-submit'   ,    action="store_true",  dest='nosubmi
 parser.add_option(      '--enList'      ,    dest='enList'              , help='E_T list to use with gun [%default]', default='5,10,20,30,40,60,80,100,150,200')
 parser.add_option('--etamean' , dest='etamean' , help='mean value of eta ring to save' , default=0,  type=float)
 parser.add_option('--deta'    , dest='deta'    , help='width of eta ring'              , default=0,  type=float)
+parser.add_option('--forceDigiStep'    , dest='forceDigiStep'    , help='force digitization set digis already found in directory [%default]', default=False, action='store_true')
 parser.add_option('--inPathPU'    , dest='inPathPU'    , help='input path for PU files (overrides defaults) [%default]'              , default=None,  type='string')
 
 (opt, args) = parser.parse_args()
@@ -173,7 +174,7 @@ elif (opt.version==62):
     granularity='0-15:1'
     noise='0-15:0.15'
     threshold='0-15:5'
-elif (opt.version==63):
+elif opt.version in [63,630]:
     granularity='0-68:1'
     if (label=='200u'):
         noise='0-51:0.13,53-68:0.15'
@@ -182,11 +183,28 @@ elif (opt.version==63):
     else:
         noise='0-51:0.27,53-68:0.15'
     threshold='0-68:5'
+elif opt.version in [64,640]:
+    granularity='0-68:1'
+    noise='0-51:0.13,53-68:0.15'    
+    threshold='0-68:5'
+elif opt.version in [65,650]:
+    granularity='0-59:1'
+    noise='0-51:0.13,53-59:0.15'    
+    threshold='0-59:5'
+elif opt.version in [66,660]:
+    granularity='0-59:1'
+    noise='0-51:0.13,53-59:0.15'
+    threshold='0-59:5'
+elif opt.version in [67,670]:
+    granularity='0-76:1'
+    noise='0-56:0.13,57-76:0.15'
+    threshold='0-76:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'
     threshold='0-51:5'
 
+missingFiles=[]
 for nPuVtx in nPuVtxlist:
 
     for interCalib in interCalibList:
@@ -235,28 +253,40 @@ for nPuVtx in nPuVtxlist:
             if opt.alpha>0 : outTag='%s_eta%3.3f'%(outTag,opt.alpha) 
             if opt.phi!=0.5 : outTag='%s_phi%3.3fpi'%(outTag,opt.phi) 
             if (opt.run>=0) : outTag='%s_run%d'%(outTag,opt.run)
+
+            simFile='%s/HGcal_%s.root'%(eosDirIn,outTag)
+            if not os.path.isfile(simFile.replace('root://eoscms/','')):
+                missingFiles.append(simFile)
+                continue
+            digiFile='%s/Digi%s_%s%s.root'%(eosDir,suffix,label,outTag)
+            if os.path.isfile(digiFile) and not opt.forceDigiStep:
+                print 'Digi',digiFile,'is already produced but forceProd=False, passing'
+                continue
+            #continue
+
+
             scriptFile.write('localdir=`pwd`\n')
             if (opt.etamean>1.3):
-                 scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s %3.2f %3.2f | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,opt.etamean,opt.deta,outlog))
+                 scriptFile.write('%s/bin/digitizer %d %s $localdir/ %s %s %s %d %d %d %s %3.2f %3.2f | tee %s\n'%(os.getcwd(),opt.nevts,simFile,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,opt.etamean,opt.deta,outlog))
             else:
-                scriptFile.write('%s/bin/digitizer %d %s/HGcal_%s.root $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,eosDirIn,outTag,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
+                scriptFile.write('%s/bin/digitizer %d %s $localdir/ %s %s %s %d %d %d %s | tee %s\n'%(os.getcwd(),opt.nevts,simFile,granularity,noise,threshold,interCalib,nSiLayers,nPuVtx,INPATHPU,outlog))
             scriptFile.write('echo "--Local directory is " $localdir >> %s\n'%(g4log))
             scriptFile.write('ls * >> %s\n'%(g4log))
             if len(opt.eos)>0:
                 #scriptFile.write('grep "alias eos=" /afs/cern.ch/project/eos/installation/cms/etc/setup.sh | sed "s/alias /export my/" > eosenv.sh\n')
                 #scriptFile.write('source eosenv.sh\n')
                 scriptFile.write('eos mkdir -p %s\n'%eosDir)
-                scriptFile.write('eos cp $localdir/DigiPFcal.root %s/Digi%s_%s%s.root\n'%(eosDir,suffix,label,outTag))
+                scriptFile.write('eos cp $localdir/DigiPFcal.root %s\n'%digiFile)
                 scriptFile.write('if (( "$?" != "0" )); then\n')
                 scriptFile.write('echo " --- Problem with copy of file DigiPFcal.root to EOS. Keeping locally." >> %s\n'%(g4log))
                 scriptFile.write('else\n')
-                scriptFile.write('eossize=`eos ls -l %s/Digi%s_%s%s.root | awk \'{print $5}\'`\n'%(eosDir,suffix,label,outTag))
+                scriptFile.write('eossize=`eos ls -l %s | awk \'{print $5}\'`\n'%digiFile)
                 scriptFile.write('localsize=`ls -l DigiPFcal.root | awk \'{print $5}\'`\n')
                 scriptFile.write('if [ $eossize != $localsize ]; then\n')
                 scriptFile.write('echo " --- Copy of digi file to eos failed. Localsize = $localsize, eossize = $eossize. Keeping locally..." >> %s\n'%(g4log))
                 scriptFile.write('else\n')
                 scriptFile.write('echo " --- Size check done: Localsize = $localsize, eossize = $eossize" >> %s\n'%(g4log))
-                scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s/Digi%s_%s%s.root" >> %s\n'%(eosDir,suffix,label,outTag,g4log))
+                scriptFile.write('echo " --- File DigiPFcal.root successfully copied to EOS: %s" >> %s\n'%(digiFile,g4log))
                 scriptFile.write('rm DigiPFcal.root\n')
                 scriptFile.write('fi\n')
                 scriptFile.write('fi\n')
@@ -274,5 +304,9 @@ for nPuVtx in nPuVtxlist:
             if opt.nosubmit : os.system('echo bsub -q %s %s/runDigiJob%s.sh'%(myqueue,outDir,suffix)) 
             else: os.system("bsub -q %s \'%s/runDigiJob%s.sh\'"%(myqueue,outDir,suffix))
 
-
+missingFiles=set(missingFiles)
+if len(missingFiles)>0:
+    print 'The following files are missing in action, jobs were not submitted'
+    for f in missingFiles:
+        print f
 

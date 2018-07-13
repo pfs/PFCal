@@ -71,6 +71,12 @@ public:
     v_HGCALHE_v8=61,
     v_HGCALBE_v8=62,
     v_HGCAL_v8=63,
+    v_HGCAL_v80=80, //FH+BH granularity studies
+    v_HGCAL_v81=81,
+    v_HGCAL_v82=82,
+    v_HGCAL_v83=83,
+    v_HGCAL_v84=84,
+    v_HGCAL_v85=85,
     v_HGCALEE_TB=100,
     v_HGCALEE_TB_gap0=101,
     v_HGCALEE_TB_allW=102,
@@ -180,6 +186,7 @@ private:
   unsigned firstHFlayer_;
   unsigned firstMixedlayer_;
   unsigned firstScintlayer_;
+  unsigned nbhLayers_; 
 
   std::vector<G4double> absThickW_;
   std::vector<G4double> absThickPb_;
