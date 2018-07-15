@@ -174,7 +174,7 @@ elif (opt.version==62):
     granularity='0-15:1'
     noise='0-15:0.15'
     threshold='0-15:5'
-elif opt.version in [63,630]:
+elif opt.version in [63,80]:
     granularity='0-68:1'
     if (label=='200u'):
         noise='0-51:0.13,53-68:0.15'
@@ -183,22 +183,11 @@ elif opt.version in [63,630]:
     else:
         noise='0-51:0.27,53-68:0.15'
     threshold='0-68:5'
-elif opt.version in [64,640]:
-    granularity='0-68:1'
-    noise='0-51:0.13,53-68:0.15'    
-    threshold='0-68:5'
-elif opt.version in [65,650]:
-    granularity='0-59:1'
-    noise='0-51:0.13,53-59:0.15'    
-    threshold='0-59:5'
-elif opt.version in [66,660]:
-    granularity='0-59:1'
-    noise='0-51:0.13,53-59:0.15'
-    threshold='0-59:5'
-elif opt.version in [67,670]:
-    granularity='0-76:1'
-    noise='0-56:0.13,57-76:0.15'
-    threshold='0-76:5'
+elif opt.version==81:
+    #indices[4]-1  indices[4]+1
+    granularity='0-58:1'
+    noise='0-45:0.13,46-58:0.15'    
+    threshold='0-58:5'
 else:
     granularity='0-51:4'
     noise='0-51:0.15'
