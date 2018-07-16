@@ -1609,6 +1609,14 @@ void DetectorConstruction::buildSectorStack(const unsigned sectorNum,
   std::cout << "};" << std::endl;
   std::cout << "******************* *************************" << endl;
 
+  //backward compatibility
+  std::cout << " Z positions of sensitive layers: " << std::endl;
+  for (size_t i=0; i<m_caloStruct.size(); i++) {
+    std::cout << "sensitiveZ_[" << i << "] = " << m_caloStruct[i].sensitiveZ << "; "
+              << "m_minEta[" << i << "] = " << m_minEta[i] << ";"
+              << "m_maxEta[" << i << "] = " << m_maxEta[i] << ";"
+              << std::endl;
+  }
   
   //dummy layer to get genparticles
   std::string eleName = "DummyLayer";
