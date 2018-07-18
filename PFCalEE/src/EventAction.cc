@@ -48,9 +48,15 @@ EventAction::EventAction()
   //square map for FHCAL Scint + BH Scint
   double etamin = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMinEta();
   double etamax = ((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetMaxEta();
-  geomConv_->initialiseSquareMap1(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),0.01745);//eta phi segmentation
-  geomConv_->initialiseSquareMap2(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),0.02182);//eta phi segmentation
+  std::vector<G4double> phiSegmentationList=((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetPhiSectorSegmentation();
+  geomConv_->initialiseSquareMap1(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),phiSegmentationList[0]);//eta phi segmentation
+  geomConv_->initialiseSquareMap2(etamin,etamax,-1.*TMath::Pi(),TMath::Pi(),phiSegmentationList[1]);
   
+  //for the TDR geometry this is the first layer to use a coarser eta-phi segmentation
+  SetFirstBHCAL2Layer(((DetectorConstruction*)G4RunManager::GetRunManager()->GetUserDetectorConstruction())->GetFirstBHCAL2Layer());
+  std::cout << "[EventAction] first BHCAL2 layer will be set to " << GetFirstBHCAL2Layer() << std::endl
+            << "              phi segmentation in BHCAL1 set to " << phiSegmentationList[0] << std::endl
+            << "              phi segmentation in BHCAL2 set to " << phiSegmentationList[1] << std::endl;
 
   tree_=new TTree("HGCSSTree","HGC Standalone simulation tree");
   tree_->Branch("HGCSSEvent","HGCSSEvent",&event_);
@@ -168,7 +174,7 @@ void EventAction::EndOfEventAction(const G4Event* g4evt)
 
 	for (unsigned iSiHit(0); iSiHit<(*detector_)[i].getSiHitVec(idx).size();++iSiHit){
 	  G4SiHit lSiHit = (*detector_)[i].getSiHitVec(idx)[iSiHit];
-	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<57?geomConv_->squareMap1():geomConv_->squareMap2()): (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),CELL_SIZE_X,is_scint?true:false);
+	  HGCSSSimHit lHit(lSiHit,idx,is_scint? (i<firstBHCAL2Layer_?geomConv_->squareMap1():geomConv_->squareMap2()): (shape_==4 ?geomConv_->squareMap() : shape_==2?geomConv_->diamondMap():shape_==3?geomConv_->triangleMap():geomConv_->hexagonMap()),CELL_SIZE_X,is_scint?true:false);
 	  
 	  isInserted = lHitMap.insert(std::pair<unsigned,HGCSSSimHit>(lHit.cellid(),lHit));
 	  if (!isInserted.second) isInserted.first->second.Add(lSiHit);

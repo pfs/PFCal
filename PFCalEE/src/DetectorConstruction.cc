@@ -951,7 +951,11 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
   std::vector<G4double> lThick;
   std::vector<std::string> lEle;
 
+  std::vector<G4double> phiSegmentationList={TMath::Pi()*2./360.,TMath::Pi()*2./288.};
+  SetPhiSectorSegmentation(phiSegmentationList);
+
   if (aVersion==8){
+    SetFirstBHCAL2Layer(57);
     firstScintlayer_ = m_caloStruct.size();
 
     G4double airThick = 1.5*mm;
@@ -963,18 +967,22 @@ void DetectorConstruction::buildHGCALBHE(const unsigned aVersion){
     if(version_==v_HGCAL_v80) {
       fhSSteelThick = 53*mm;
       bhSSteelThick = 53*mm;
+      SetFirstBHCAL2Layer(57);
     }
     if(version_==v_HGCAL_v81) {
       fhSSteelThick = 60*mm;
       bhSSteelThick = 97*mm;
+      SetFirstBHCAL2Layer(49);
     }
     if(version_==v_HGCAL_v82) {
       fhSSteelThick = 76*mm;
       bhSSteelThick = 76*mm;
+      SetFirstBHCAL2Layer(49);
     }
     if(version_==v_HGCAL_v83) {
       fhSSteelThick = 25.3*mm;
       bhSSteelThick = 54.9*mm;
+      SetFirstBHCAL2Layer(62);
     }
 
     size_t curIdx(m_caloStruct.size()-1);

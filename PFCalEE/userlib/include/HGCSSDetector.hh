@@ -479,8 +479,8 @@ public:
         etaBoundary_.resize(sensZ.size()+1,0);
         for(size_t i=0; i<sensZ.size(); i++){
           sensitiveZ_[i]=sensZ[i];
-          if(sensitiveZ_[i]==0) indices_[4]=i;
-          if(sensitiveZ_[i]!=0) etaBoundary_[i]=etaBound[i];
+          etaBoundary_[i]=etaBound[i];
+          if(sensitiveZ_[i]==0) indices_[4]=i;          
         }          
         indices_[6]=sensZ.size();
       }
