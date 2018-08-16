@@ -175,6 +175,7 @@ public:
   G4double getAverageTime();
   G4int getTotalSensHits();
   G4double getTotalSensE();
+  G4double getTotalThick() { return Total_thick; }
 
   const G4SiHitVec & getSiHitVec(const unsigned & idx) const;
   const G4SiHitVec & getAlHitVec() const;

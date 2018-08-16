@@ -47,12 +47,14 @@ public:
   //std::ofstream & fout() {return fout_;}
 
   bool isFirstVolume(const std::string volname) const;
+  void SetFirstBHCAL2Layer(G4int layer) { firstBHCAL2Layer_=layer; }
+  G4int GetFirstBHCAL2Layer() { return firstBHCAL2Layer_; }
 
 private:
   RunAction*  runAct;
   std::vector<SamplingSection> *detector_;
   G4int     evtNb_,printModulo;
-
+  G4int firstBHCAL2Layer_;
   HGCSSGeometryConversion* geomConv_;
 
   TFile *outF_;
