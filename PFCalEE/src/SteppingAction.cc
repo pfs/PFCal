@@ -148,31 +148,42 @@ void SteppingAction::UserSteppingAction(const G4Step* aStep)
   //((thePrePVname=="Si18_0phys" && thePostPVname=="Si18_1phys") || 
   //(thePrePVname=="Si18_1phys" && thePostPVname=="Si18_0phys"))
 //)
+//For just dummy layer
+  //if (globalTime < timeLimit_ && 
+  //  (thePrePVname=="Wphys"
+  //	&& eventAction_->isFirstVolume(thePostPVname))
+  //  )
+  //for all Si layers
   if (globalTime < timeLimit_ && 
-      (thePrePVname=="Wphys"
-	&& eventAction_->isFirstVolume(thePostPVname))
+      (thePrePVname.find("Si")!=thePrePVname.npos || thePrePVname.find("Scint")!=thePrePVname.npos)  && thePrePVname.find("0phys")!=thePrePVname.npos
       )
     {
-    //if (pdgId == 2112) 
-    //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
-    const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
-    //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]
+      unsigned detLayer;
+      unsigned startPos = thePrePVname.find_first_of("1234567890");
+      unsigned lastPos = thePrePVname.find_first_of("_");
+      unsigned length = lastPos-startPos;
+      std::istringstream(thePrePVname.substr(startPos,length))>>detLayer;
+      //if (pdgId == 2112) 
+      //const G4ThreeVector & preposition = thePreStepPoint->GetPosition();
+      const G4ThreeVector & postposition = thePostStepPoint->GetPosition();
+      //std::cout << "pre " << preposition[0] << " " << preposition[1] << " " << postposition[2]
     //	      << std::endl
     //	      << "post " << postposition[0] << " " << postposition[1] << " " << postposition[2]
     //	      << std::endl;
-    const G4ThreeVector &p = lTrack->GetMomentum();
-    G4ParticleDefinition *pd = lTrack->GetDefinition();
-    genPart.setPosition(postposition[0],postposition[1],postposition[2]);
-    genPart.setMomentum(p[0],p[1],p[2]);
-    genPart.mass(pd->GetPDGMass());
-    genPart.time(globalTime);
-    genPart.pdgid(pdgId);
-    genPart.charge(pd->GetPDGCharge());
-    genPart.trackID(trackID);
-    //double tmpE = sqrt(pd->GetPDGMass()*pd->GetPDGMass()+(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]));
-    //std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " " << trackID << " id=" << pdgId << " t=" << globalTime << " E=" << tmpE << std::endl;
-    //if (pdgId == 2112) genPart.Print(G4cout);
-  }
+      const G4ThreeVector &p = lTrack->GetMomentum();
+      G4ParticleDefinition *pd = lTrack->GetDefinition();
+      genPart.setPosition(postposition[0],postposition[1],postposition[2]);
+      genPart.setMomentum(p[0],p[1],p[2]);
+      genPart.mass(pd->GetPDGMass());
+      genPart.layer(detLayer);
+      genPart.time(globalTime);
+      genPart.pdgid(pdgId);
+      genPart.charge(pd->GetPDGCharge());
+      genPart.trackID(trackID);
+      double tmpE = sqrt(pd->GetPDGMass()*pd->GetPDGMass()+(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]));
+      std::cout << "-- found incoming: " << thePrePVname << " " << thePostPVname << " layer " << detLayer << " trackID " << trackID << " id=" << pdgId << " t=" << globalTime << " E=" << tmpE << std::endl;
+      //if (pdgId == 2112) genPart.Print(G4cout);
+    }
 
   //if (globalTime < 10) //timeLimit_) 
   eventAction_->Detect(edep,stepl,globalTime,pdgId,volume,position,trackID,parentID,genPart);

@@ -20,8 +20,18 @@
 #include "TCanvas.h"
 #include "TLatex.h"
 #include "TMath.h"
+#include "TVectorD.h"
 
 #include "HGCSSMipHit.hh"
+#include "HGCSSGenParticle.hh"
+
+#include "PositionFit.hh"
+#include "SignalRegion.hh"
+
+#include "Math/Vector3D.h"
+#include "Math/Vector3Dfwd.h"
+#include "Math/Point2D.h"
+#include "Math/Point2Dfwd.h"
 
 #include "utilities.h"
 
@@ -34,11 +44,14 @@ int main(int argc, char** argv){//main
   unsigned pNevts;
   std::string inFilePath;
   std::string outFilePath;
+  unsigned nRunsIn;
   unsigned nRuns;
   unsigned startIdx;
   unsigned debug;
   bool do5lay;
   unsigned doTightSel;
+  double etamean;
+  double deta;
 
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
@@ -51,11 +64,14 @@ int main(int argc, char** argv){//main
     ("pNevts,n",       po::value<unsigned>(&pNevts)->default_value(0))
     ("inFilePath,i",   po::value<std::string>(&inFilePath)->required())
     ("outFilePath,o",  po::value<std::string>(&outFilePath)->required())
+    ("nRunsIn",        po::value<unsigned>(&nRunsIn)->default_value(0))
     ("nRuns,R",        po::value<unsigned>(&nRuns)->default_value(0))
     ("startIdx,s",     po::value<unsigned>(&startIdx)->default_value(0))
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("do5lay",         po::value<bool>(&do5lay)->default_value(false))
     ("doTightSel",     po::value<unsigned>(&doTightSel)->default_value(0))
+    ("etamean,e",      po::value<double>(&etamean)->default_value(2.0))
+    ("deta",      po::value<double>(&deta)->default_value(0.1))
     ;
 
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -67,7 +83,7 @@ int main(int argc, char** argv){//main
 	    << " -- Input file path: " << inFilePath << std::endl
 	    << " -- Output file path: " << outFilePath << std::endl
 	    << " -- Do 5 layers: " << do5lay  << std::endl
-	    << " -- Do tight selection (1: exactly one hit): " << doTightSel 
+	    << " -- Do tight selection (1: exactly one hit, 2: exactly in center of cells, 3: HCAL condition separation): " << doTightSel 
 	    << std::endl
 	    << " -- Processing ";
   if (pNevts == 0) std::cout << "all events in " << nRuns << "runs." << std::endl;
@@ -84,7 +100,7 @@ int main(int argc, char** argv){//main
   std::cout << " ---- Selection settings: ---- " << std::endl
 	    << " -------noise=threshBeforeAfterMin ";
   for (unsigned iN(0); iN<nNoise;++iN){
-    threshBeforeAfterMin[iN] = 0.5;//std::max(0.9,2.2*noise[iN]);
+    threshBeforeAfterMin[iN] = std::max(0.9,2.2*noise[iN]);
     std::cout << noise[iN] << "=" << threshBeforeAfterMin[iN] << " ";
   }
   std::cout << std::endl
@@ -107,7 +123,10 @@ int main(int argc, char** argv){//main
   else {
     for (unsigned i(startIdx);i<startIdx+nRuns;++i){
       std::ostringstream lstrrec;
-      lstrrec << inFilePath << "_run" << i << ".root";
+      lstrrec << inFilePath << "_run" ;
+      if (nRunsIn>0) lstrrec << nRunsIn*i << "_" << nRunsIn*(i+1)-1;
+      else lstrrec << i ;
+      lstrrec << ".root";
       if (!testInputFile(lstrrec.str(),mipFile)) continue;
       lTree->AddFile(lstrrec.str().c_str());
     }
@@ -130,6 +149,20 @@ int main(int argc, char** argv){//main
     std::cout << " -- output file " << outputFile->GetName() << " successfully opened." << std::endl;
   }
   outputFile->cd();
+  TTree *miptree=new TTree("MipTree","HGC MipAnalysis tree");
+
+  HGCSSGenParticleVec lGenParts;
+  miptree->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&lGenParts);
+
+  TH1F *hGenPnoSel = new TH1F("hGenPnoSel",";p^{gen} (GeV);Particles",5000,0,50);
+  hGenPnoSel->StatOverflows(1);
+  TH1F *hGenPTnoSel = new TH1F("hGenPTnoSel",";p_{T}^{gen} (GeV);Particles",2000,0,20);
+  TH1F *hGenP = new TH1F("hGenP",";p^{gen} (GeV);Particles",5000,0,50000);
+  hGenP->StatOverflows(1);
+  TH1F *hGenPT = new TH1F("hGenPT",";p_{T}^{gen} (GeV);Particles",2000,0,20000);
+  TH1F *hGenEta = new TH1F("hGenEta",";#eta^{gen};Particles",32,1.4,3);
+  TH1F *hGenPhi = new TH1F("hGenPhi",";#phi^{gen};Particles",180,-3.1416,3.1416);
+  TH1F *hGenPID = new TH1F("hGenPID",";pdgId^{gen};Particles",1000,-500,500);
 
   TH1F *hE[nNoise][nLayers+1];
   TH1F *hEsig[nNoise][nLayers+1];
@@ -186,6 +219,10 @@ int main(int argc, char** argv){//main
 
   std::vector<HGCSSMipHitVec*> miphitvec;
   miphitvec.resize(nNoise,0);
+  std::vector<HGCSSGenParticle> * genvec = 0;
+
+  if (lTree->GetBranch("HGCSSGenParticleVec")) lTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+
 
   for (unsigned iN(0); iN<nNoise;++iN){
     std::ostringstream label;
@@ -202,12 +239,27 @@ int main(int argc, char** argv){//main
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
     lTree->GetEntry(ievt);
+    //save genparticles
+    lGenParts.clear();
+    unsigned nGenParts = (*genvec).size();
+    lGenParts.reserve(nGenParts);
+    //if (nGenParts != 1) continue;
+    for (unsigned iP(0); iP<nGenParts; ++iP){//loop on gen particles
+      HGCSSGenParticle lPart = (*genvec)[iP];
+      lGenParts.push_back(lPart);
+      hGenPnoSel->Fill(lPart.p()/1000.);
+      hGenPTnoSel->Fill(lPart.pt()/1000.);
+    }
 
+    miptree->Fill();
+
+    bool passCut = false;
     for (unsigned iN(0); iN<nNoise;++iN){//loop on noise
       unsigned nTrkPerEvt[nLayers+1];
       for (unsigned iL(0); iL<nLayers+1; ++iL){
 	nTrkPerEvt[iL] = 0;
       }
+      if (debug) std::cout << " -- noise " << iN << " nGenParts = " << nGenParts << " nHits = " << (*miphitvec[iN]).size() << std::endl;
       for (unsigned iH(0); iH<(*miphitvec[iN]).size(); ++iH){//loop on hits
 	HGCSSMipHit lHit = (*miphitvec[iN])[iH];
 	unsigned layer = lHit.l();
@@ -218,34 +270,66 @@ int main(int argc, char** argv){//main
 	unsigned neiId[4] = {0,0,0,0};
 	double neiE[4] = {0,0,0,0};
 	unsigned nNei = layer<53?7:9;
-	for (unsigned ineigh(0); ineigh<nNei; ++ineigh){
-	  if (lHit.neigh_e_prev2layer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_prev2layer(ineigh)<threshBeforeAfterMax) {
-	    nNeigh[0]++;
-	    neiId[0] = ineigh;
-	    neiE[0] = lHit.neigh_e_prev2layer(ineigh);
-	  }
-	  if (lHit.neigh_e_prevlayer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_prevlayer(ineigh)<threshBeforeAfterMax) {
-	    nNeigh[1]++;
-	    neiId[1] = ineigh;
-	    neiE[1] = lHit.neigh_e_prevlayer(ineigh);
-	  }
-	  if (lHit.neigh_e_nextlayer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_nextlayer(ineigh)<threshBeforeAfterMax) {
-	    nNeigh[2]++;
-	    neiId[2] = ineigh;
-	    neiE[2] = lHit.neigh_e_nextlayer(ineigh);
-	  }
-	  if (lHit.neigh_e_next2layer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_next2layer(ineigh)<threshBeforeAfterMax) {
-	    nNeigh[3]++;
-	    neiId[3] = ineigh;
-	    neiE[3] = lHit.neigh_e_next2layer(ineigh);
+	if (doTightSel<3 || layer>26){
+	  for (unsigned ineigh(0); ineigh<nNei; ++ineigh){
+	    if (lHit.neigh_e_prev2layer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_prev2layer(ineigh)<threshBeforeAfterMax) {
+	      nNeigh[0]++;
+	      neiId[0] = ineigh;
+	      neiE[0] = lHit.neigh_e_prev2layer(ineigh);
+	    }
+	    if (lHit.neigh_e_prevlayer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_prevlayer(ineigh)<threshBeforeAfterMax) {
+	      nNeigh[1]++;
+	      neiId[1] = ineigh;
+	      neiE[1] = lHit.neigh_e_prevlayer(ineigh);
+	    }
+	    if (lHit.neigh_e_nextlayer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_nextlayer(ineigh)<threshBeforeAfterMax) {
+	      nNeigh[2]++;
+	      neiId[2] = ineigh;
+	      neiE[2] = lHit.neigh_e_nextlayer(ineigh);
+	    }
+	    if (lHit.neigh_e_next2layer(ineigh)>threshBeforeAfterMin[iN] && lHit.neigh_e_next2layer(ineigh)<threshBeforeAfterMax) {
+	      nNeigh[3]++;
+	      neiId[3] = ineigh;
+	      neiE[3] = lHit.neigh_e_next2layer(ineigh);
+	    }
 	  }
 	}
+	else {//hcal neigh distance selection
+	  for (unsigned jH(0); jH<(*miphitvec[iN]).size(); ++jH){//loop on hits
+	    if (jH==iH) continue;
+	    HGCSSMipHit lSecHit = (*miphitvec[iN])[jH];
+	    unsigned seclay = lSecHit.l();
+	    if (seclay == layer || layer>26) continue;
+	    bool passLay = 
+	      (layer>2 && layer<25 && abs(layer-seclay)==3) ||
+	      (layer==2 && ((layer-seclay)==2 || (seclay-layer)==3)) ||
+	      (layer<2 && (seclay-layer)==3) ||
+	      (layer==25 && ((seclay-layer)==2 || (layer-seclay)==3))||
+	      (layer>25 && layer-seclay==3);
+	    if (!passLay) continue;
+	    double secE = lSecHit.e();
+	    ROOT::Math::XYZPoint pos = ROOT::Math::XYZPoint(lHit.x(),lHit.y(),lHit.z());
+	    ROOT::Math::XYZPoint secpos = ROOT::Math::XYZPoint(lSecHit.x(),lSecHit.y(),lSecHit.z());
+	    if (secE>threshBeforeAfterMin[iN] && secE<threshBeforeAfterMax && fabs(pos.eta()-secpos.eta()) < 0.01){
+	      if ( int(layer-seclay) < 0 ){
+		nNeigh[2]++;
+		neiE[2] = secE;
+		neiId[2] = 0;
+	      }
+	      else {
+		nNeigh[1]++;
+		neiId[1] = 0;
+		neiE[1] = secE;
+	      }
+	    }//energy in correct range
+	  }//loop on hits
+	}//HCAL hit selection
 	if (do5lay){
 	  if (!doTightSel) fail = lHit.getMaxEnergy(-2)<threshBeforeAfterMin[iN] || lHit.getMaxEnergy(2)<threshBeforeAfterMin[iN] || lHit.getMaxEnergy(-2)>threshBeforeAfterMax || lHit.getMaxEnergy(2)>threshBeforeAfterMax;
-	  else {
+	  else {//doTightSel
 
 	    if (doTightSel==1) {
-	      bool fail0 = nNeigh[0]!=1 || nNeigh[1]!=1 ||nNeigh[2]!=1 ||nNeigh[3]!=1;
+	      bool fail0 = nNeigh[0]!=1 || nNeigh[1]!=1 ||nNeigh[2]!=1 || nNeigh[3]!=1;
 	      if (layer<53){
 		bool pass0 = neiId[0]==0 && neiId[1]==0 && neiId[2]==0 && neiId[3]==0 ;//((neiId[2]==0 && (neiId[3]==0||neiId[3]>=4))  || (neiId[2]>=4 && neiId[3]==neiId[2]));
 		bool pass1 = neiId[0]==1 && (neiId[1]==1 || neiId[1]==0) && ((neiId[2]==0 && (neiId[3]==0||neiId[3]==6)) || (neiId[2]==6 && neiId[3]==6)) ;
@@ -271,8 +355,8 @@ int main(int argc, char** argv){//main
 
 	      }
 	      
-	    }
-	    else {
+	    }//tightsel
+	    else if (doTightSel==2) {//tightsel==2: want exactly the layer aligned and nothing else...
 	      bool failneigh = false;
 	      //fail if one of the neighbour in all 4 layers around is within range
 	      for (unsigned ineigh(0); ineigh<nNei-1; ++ineigh){
@@ -290,10 +374,12 @@ int main(int argc, char** argv){//main
 	      bool centralfail = lHit.neigh_e_prev2layer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_next2layer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_prev2layer(0)>threshBeforeAfterMax || lHit.neigh_e_next2layer(0)>threshBeforeAfterMax || lHit.neigh_e_prevlayer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_nextlayer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_prevlayer(0)>threshBeforeAfterMax || lHit.neigh_e_nextlayer(0)>threshBeforeAfterMax ;
 	      fail = failneigh || centralfail;
 	    }
-	  }
-	} else {
+	  }//doTightSel
+	}//do5lay
+	else {
 	  if (doTightSel){
-	    if (doTightSel==1) {
+	    if (doTightSel==1 || doTightSel==3) {
+	      if (debug>1) std::cout << " -- Hit #" << iH << " Number of neighbours " <<  nNeigh[1] << " " <<  nNeigh[2] << std::endl;
 	      bool fail0 = nNeigh[1]!=1 || nNeigh[2]!=1;
 	      if (layer<53){
 		bool pass0 = neiId[1]==0 && neiId[2]==0;
@@ -318,7 +404,7 @@ int main(int argc, char** argv){//main
 		fail = fail0 || !(pass0||pass1||pass2||pass3||pass4||pass5||pass6||pass7||pass8);
 	      }
 	    }
-	    else {
+	    else if (doTightSel==2){
 	      bool failneigh = false;
 	      //fail if one of the neighbour in all 2 layers around is within range
 	      for (unsigned ineigh(0); ineigh<nNei-1; ++ineigh){
@@ -333,10 +419,15 @@ int main(int argc, char** argv){//main
 	      bool centralfail = lHit.neigh_e_prevlayer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_nextlayer(0)<threshBeforeAfterMin[iN] || lHit.neigh_e_prevlayer(0)>threshBeforeAfterMax || lHit.neigh_e_nextlayer(0)>threshBeforeAfterMax ;
 	      fail = failneigh || centralfail;
 	    }
-	  }
-	}
+	  }//doTightSel
+	}//3 lay
 	if (fail) continue;
-	
+
+	if (iN==0) passCut = true;
+
+	ROOT::Math::XYZPoint pos = ROOT::Math::XYZPoint(lHit.x(),lHit.y(),lHit.z());
+	if (iN==0 && debug) std::cout << " - layer " << layer << " sel hit eta = " << pos.eta() << " phi = " << pos.phi() << std::endl;
+
 	hE[iN][layer]->Fill(lHit.e());
 	hE[iN][nLayers]->Fill(lHit.e());
 	hEmaxNeigh[iN][layer]->Fill(lHit.getMaxEnergy(0));
@@ -414,9 +505,24 @@ int main(int argc, char** argv){//main
       }
     }//loop on noise
 
+    //find genparticles corresponding to selected hits...
+    if (passCut){
+      for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles
+	HGCSSGenParticle lPart = (*genvec)[iP];
+	hGenP->Fill(lPart.p()/1000.);
+	hGenPT->Fill(lPart.pt()/1000.);
+	hGenEta->Fill(lPart.eta());
+	hGenPhi->Fill(lPart.phi());
+	hGenPID->Fill(lPart.pdgid());
+	if (debug) std::cout << " --- sel genParticle eta = " << lPart.eta() << " phi = " << lPart.phi() << " E = " << lPart.E()/1000. << " GeV" << std::endl;
+	
+      }
+    }
 
   }//loop on entries
 
+  outputFile->cd();
+  miptree->Write();
   outputFile->Write();
   outputFile->Close();
   

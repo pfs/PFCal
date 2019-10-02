@@ -30,6 +30,7 @@
 #include "HGCSSInfo.hh"
 #include "HGCSSSimHit.hh"
 #include "HGCSSRecoHit.hh"
+#include "HGCSSGenParticle.hh"
 #include "HGCSSRecoJet.hh"
 #include "HGCSSCalibration.hh"
 #include "HGCSSDigitisation.hh"
@@ -192,6 +193,96 @@ void processHist(const unsigned iL,
      
 }//processHist
 */
+double getEtaPhys(const double & posx,
+		  const double & posy,
+		  const double & posz,
+		  const HGCSSEvent * event){
+
+    double posxcor = posx-event->vtx_x();
+    double posycor = posy-event->vtx_y();
+    double poszcor = posz-event->vtx_z();
+    double r3d = sqrt(pow(posxcor,2)+pow(posycor,2)+pow(poszcor,2));
+    double thetaPhys = acos(fabs(poszcor)/r3d);
+    double etaPhys = (poszcor)>0? -1.*log(tan(thetaPhys/2.)) : log(tan(thetaPhys/2.));
+    return etaPhys;
+}
+
+bool processEvent(const HGCSSEvent * event,
+		  const std::vector<HGCSSGenParticle> * genvec,
+		  const std::vector<HGCSSSimHit> * hitvec,
+		  HGCSSGeometryConversion & geomConv,
+		  HGCSSCalibration & mycalib,
+		  HGCSSDetector & myDetector,
+		  HGCSSDigitisation & myDigitiser,
+		  const double etamean,
+		  const double deta,
+		  const bool doEtaSel,
+		  const bool pSaveSims,
+		  const unsigned debug,
+		  const unsigned shape,
+		  HGCSSGenParticleVec & lGenParts,
+		  HGCSSSimHitVec & lSimHits
+		  ){
+  bool passGenFilter = false;
+
+  if (doEtaSel){
+    for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles
+      HGCSSGenParticle lPart = (*genvec)[iP];
+      if (fabs(lPart.charge())>0.1 && fabs(lPart.eta()-etamean)<deta) {
+	passGenFilter = true;
+	lGenParts.push_back(lPart);
+      }
+    }
+  }
+  
+  for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
+    HGCSSSimHit lHit = (*hitvec)[iH];
+    if (lHit.energy()<=0) continue;
+      
+    //do not save hits with 0 energy...
+    if (pSaveSims) lSimHits.push_back(lHit);
+    
+    unsigned layer = lHit.layer();
+    const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
+    DetectorEnum type = subdet.type;
+    if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << layer-subdet.layerIdMin << std::endl;
+
+
+    std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
+    double posx = xy.first;//lHit.get_x(cellSize);
+    double posy = xy.second;//lHit.get_y(cellSize);
+    double radius = sqrt(pow(posx,2)+pow(posy,2));
+
+    if (lHit.silayer() >= geomConv.getNumberOfSiLayers(type,radius)) continue;
+
+    double posz = lHit.get_z();
+    double etaPhys = getEtaPhys(posx,posy,posz,event);
+
+    if (doEtaSel){
+      bool passeta = fabs(etaPhys-etamean)<deta;
+      if (!passeta) continue;
+    }
+    
+    double energy = lHit.energy()*mycalib.MeVToMip(layer,radius); // if (energy > 0) std::cout << "sim energy = "<<lHit.energy()<<", reco energy = "<<energy<<std::endl;
+    //mycalib already corrects for vertex position....
+    double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
+    bool passTime = myDigitiser.passTimeCut(type,realtime);
+    if (!passTime) continue;
+    if (debug > 1) std::cout << " hit " << iH 
+			     << " lay " << layer  
+			     << " x " << posx 
+			     << " y " << posy
+			     << " z " << posz
+			     << " t " << lHit.time() << " " << realtime
+			     << std::endl;
+    //geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
+    geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
+    
+  }//loop on input simhits
+
+  return passGenFilter;
+}
+
 
 void processHist(const unsigned iL,
 		 std::map<unsigned,MergeCells> & histE,
@@ -338,7 +429,9 @@ int main(int argc, char** argv){//main
   bool pSaveDigis;
   bool pSaveSims;
   bool pMakeJets;
- 
+
+  bool pFilterOnGenParticles;
+
   po::options_description preconfig("Configuration"); 
   preconfig.add_options()("cfg,c",po::value<std::string>(&cfg)->required());
   po::variables_map vm;
@@ -364,6 +457,7 @@ int main(int argc, char** argv){//main
     ("pSaveDigis",    po::value<bool>(&pSaveDigis)->default_value(false))
     ("pSaveSims",     po::value<bool>(&pSaveSims)->default_value(false))
     ("pMakeJets",     po::value<bool>(&pMakeJets)->default_value(false))
+    ("pFilterOnGenParticles",     po::value<bool>(&pFilterOnGenParticles)->default_value(true))
     ;
 
   po::store(po::command_line_parser(argc, argv).options(config).allow_unregistered().run(), vm);
@@ -502,6 +596,8 @@ int main(int argc, char** argv){//main
   unsigned nPuVtx = 0;
   unsigned nPuEvts = 0;
   std::vector<HGCSSSimHit> * puhitvec = 0;
+  std::vector<HGCSSGenParticle> * pugenvec = 0;
+
   if(nPU!=0){
     
     TString localMountPuPath(puPath.c_str());
@@ -532,6 +628,7 @@ int main(int argc, char** argv){//main
     }
 
     puTree->SetBranchAddress("HGCSSSimHitVec",&puhitvec);
+    puTree->SetBranchAddress("HGCSSGenParticleVec",&pugenvec);
     nPuEvts = puTree->GetEntries();
     std::cout << "- Number of PU events available: " << nPuEvts  << std::endl;
   }
@@ -541,10 +638,12 @@ int main(int argc, char** argv){//main
 
   HGCSSEvent * event=0;
   std::vector<HGCSSSimHit> * hitvec = 0;
+  std::vector<HGCSSGenParticle> * genvec = 0;
 
   inputTree->SetBranchAddress("HGCSSEvent",&event);
   inputTree->SetBranchAddress("HGCSSSimHitVec",&hitvec);
-    
+  inputTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+
   //initialise detector
   HGCSSDetector & myDetector = theDetector();
   bool isCaliceHcal = versionNumber==23;//inFilePath.find("version23")!=inFilePath.npos || inFilePath.find("version_23")!=inFilePath.npos;
@@ -670,15 +769,19 @@ int main(int argc, char** argv){//main
   HGCSSRecoHitVec lDigiHits;
   HGCSSRecoHitVec lRecoHits;
   HGCSSRecoJetVec lCaloJets;
+  HGCSSGenParticleVec lGenParts;
   unsigned maxSimHits = 0;
   unsigned maxRecHits = 0;
   unsigned maxRecJets = 0;
+  unsigned maxGenParts = 0;
   HGCSSEvent lEvent;
   outputTree->Branch("HGCSSEvent",&lEvent);
   if (nPU!=0) outputTree->Branch("nPuVtx",&nPuVtx);
   if (pSaveSims) outputTree->Branch("HGCSSSimHitVec","std::vector<HGCSSSimHit>",&lSimHits);
   if (pSaveDigis) outputTree->Branch("HGCSSDigiHitVec","std::vector<HGCSSRecoHit>",&lDigiHits);
   outputTree->Branch("HGCSSRecoHitVec","std::vector<HGCSSRecoHit>",&lRecoHits);
+  outputTree->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&lGenParts);
+
   if (pMakeJets) outputTree->Branch("HGCSSRecoJetVec","std::vector<HGCSSRecoJet>",&lCaloJets);
   TH1F * p_noise = new TH1F("noiseCheck",";noise (MIPs)",100,-5,5);
 
@@ -694,8 +797,8 @@ int main(int argc, char** argv){//main
   std::vector<PseudoJet> lParticles;
 
   for (unsigned ievt(evtmin); ievt<evtmin+nEvts; ++ievt){//loop on entries
-
     inputTree->GetEntry(ievt);
+
     lEvent.eventNumber(event->eventNumber());
     lEvent.vtx_x(event->vtx_x());
     lEvent.vtx_y(event->vtx_y());
@@ -704,53 +807,13 @@ int main(int argc, char** argv){//main
     
     mycalib.setVertex(lEvent.vtx_x(),lEvent.vtx_y(),lEvent.vtx_z());
 
+
     if (debug>0) {
       std::cout << " **DEBUG** Processing evt " << ievt << std::endl;
     }
     else if (ievt%50 == 0) std::cout << "... Processing event: " << ievt << std::endl;
     
-
-    for (unsigned iH(0); iH<(*hitvec).size(); ++iH){//loop on hits
-      HGCSSSimHit lHit = (*hitvec)[iH];
-      if (lHit.energy()<=0) continue;
-      
-      //do not save hits with 0 energy...
-      if (lHit.energy()>0 && pSaveSims) lSimHits.push_back(lHit);
-      
-      unsigned layer = lHit.layer();
-      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-      DetectorEnum type = subdet.type;
-      if (debug > 1) std::cout << " - layer " << layer << " " << subdet.name << " " << layer-subdet.layerIdMin << std::endl;
-
-      if (doEtaSel){
-	bool passeta = fabs(lHit.eta(subdet,geomConv,shape)-etamean)<deta;
-	if (!passeta) continue;
-      }
-
-      std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
-      double posx = xy.first;//lHit.get_x(cellSize);
-      double posy = xy.second;//lHit.get_y(cellSize);
-      double posz = lHit.get_z();
-      double radius = sqrt(pow(posx,2)+pow(posy,2));
-      double energy = lHit.energy()*mycalib.MeVToMip(layer,radius); // if (energy > 0) std::cout << "sim energy = "<<lHit.energy()<<", reco energy = "<<energy<<std::endl;
-      double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
-      bool passTime = myDigitiser.passTimeCut(type,realtime);
-      if (!passTime) continue;
-      if (energy>0 && 
-	  lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius) 
-	  ){
-	if (debug > 1) std::cout << " hit " << iH 
-				 << " lay " << layer  
-				 << " x " << posx 
-				 << " y " << posy
-				 << " z " << posz
-				 << " t " << lHit.time() << " " << realtime
-				 << std::endl;
-	//geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-	geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
-      }
-
-    }//loop on input simhits
+    bool passGenFilter = processEvent(event,genvec,hitvec,geomConv,mycalib,myDetector,myDigitiser,etamean,deta,doEtaSel,pSaveSims,debug,shape,lGenParts,lSimHits);
 
     if(nPU!=0){
       //get PU events
@@ -760,59 +823,39 @@ int main(int argc, char** argv){//main
       nPuVtx = lRndm->Poisson(nPU);
       //ipuevt.resize(nPuVtx,1);
       if (signalIsPu) nPuVtx -= 1;
-      std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << std::endl;
-      std::set<unsigned> lidxSet;
-      for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
+
+      //pick first event random then sequencial.... better for disk access
+      unsigned ipuevt = 0;
+      while (1){
+	ipuevt = lRndm->Integer(nPuEvts);
+	if ( (ipuevt+nPuVtx) < nPuEvts) break;
+      }
+
+      std::cout << " -- Adding " << nPuVtx << " events to signal event: " << ievt << " starting from index " << ipuevt << std::endl;
+
+      //change event by event: bit problematic for disk access....
+      /*
+	std::set<unsigned> lidxSet;
+	for (unsigned iV(0); iV<nPuVtx; ++iV){//loop on interactions
         unsigned ipuevt = 0;
 	while (1){
-	  ipuevt = lRndm->Integer(nPuEvts);
-	  if (lidxSet.find(ipuevt)==lidxSet.end()){
-	    lidxSet.insert(ipuevt);
-	    break;
-	  }
-	  else {
-	    std::cout << " -- Found duplicate ! Taking another shot." << std::endl;
-	  }
+	ipuevt = lRndm->Integer(nPuEvts);
+	if (lidxSet.find(ipuevt)==lidxSet.end()){
+	lidxSet.insert(ipuevt);
+	break;
+	}
+	else {
+	std::cout << " -- Found duplicate ! Taking another shot." << std::endl;
+	}
 	}
 	//std::cout << " ---- adding evt " << ipuevt << std::endl;
+	*/
+      for (unsigned iV(ipuevt); iV<ipuevt+nPuVtx; ++iV){//loop on interactions
+        puTree->GetEntry(iV);
 	
-        puTree->GetEntry(ipuevt);
-        for (unsigned iH(0); iH<(*puhitvec).size(); ++iH){//loop on hits
-          HGCSSSimHit lHit = (*puhitvec)[iH];
-	  if (lHit.energy()<=0) continue;
-
-	  unsigned layer = lHit.layer();
-	  const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(layer);
-	  DetectorEnum type = subdet.type;
-
-	  if (doEtaSel){
-	    bool passeta = fabs(lHit.eta(subdet,geomConv,shape)-etamean)<deta;
-	    if (!passeta) continue;
-	  }
-	  
-	  std::pair<double,double> xy = lHit.get_xy(subdet,geomConv,shape);
-	  double posx = xy.first;//lHit.get_x(cellSize);
-	  double posy = xy.second;//lHit.get_y(cellSize);
-	  double posz = lHit.get_z();
-	  double radius = sqrt(pow(posx,2)+pow(posy,2));
-	  if (lHit.silayer() < geomConv.getNumberOfSiLayers(type,radius)){
-	    double energy = lHit.energy()*mycalib.MeVToMip(layer,radius);
-	    double realtime = mycalib.correctTime(lHit.time(),posx,posy,posz);
-	    bool passTime = myDigitiser.passTimeCut(type,realtime);
-	    if (!passTime) continue;
-	    
-	    if (debug > 1) std::cout << " hit " << iH
-				     << " lay " << layer
-				     << " x " << posx
-				     << " y " << posy
-				     << " z " << posz
-				     << " t " << lHit.time() << " " << realtime
-				     << std::endl;
-	    //geomConv.fill(type,subdetLayer,energy,realtime,posx,posy,posz);
-	    geomConv.fill(layer,energy,realtime,lHit.cellid(),posz);
-	  }
-	  
-        }//loop on hits
+	passGenFilter = passGenFilter || 
+	  processEvent(event,pugenvec,puhitvec,geomConv,mycalib,myDetector,myDigitiser,etamean,deta,doEtaSel,pSaveSims,debug,shape,lGenParts,lSimHits);
+		
       }//loop on interactions
     }//add PU
 
@@ -820,117 +863,127 @@ int main(int argc, char** argv){//main
       std::cout << " **DEBUG** simhits = " << (*hitvec).size() << " " << lSimHits.size() << std::endl;
     }
 
-    //create hits, everywhere to have also pure noise
-    //digitise
-    //apply threshold
-    //save
-    unsigned nTotBins = 0;
-    for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
-      //TH2Poly *histE = geomConv.get2DHist(iL,"E");
-      std::map<unsigned,MergeCells> & histE = geomConv.get2DHist(iL);
-      //TH2Poly *histTime = geomConv.get2DHist(iL,"Time");
-      //TH2Poly *histZ = geomConv.get2DHist(iL,"Z");
-      const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
-      bool isScint = subdet.isScint;
-      //nTotBins += histE->GetNumberOfBins();
+    if ((doEtaSel && 
+	 ((pFilterOnGenParticles && passGenFilter)||!pFilterOnGenParticles)) ||
+	!doEtaSel) {//filter on genParts if etasel
 
-      std::map<int,std::pair<double,double> > & geom = isScint?(subdet.type==DetectorEnum::BHCAL1?geomConv.squareGeom1:geomConv.squareGeom2): shape==4?geomConv.squareGeom:shape==2?geomConv.diamGeom:shape==3?geomConv.triangleGeom:geomConv.hexaGeom;
+      //create hits, everywhere to have also pure noise
+      //digitise
+      //apply threshold
+      //save
+      unsigned nTotBins = 0;
+      for (unsigned iL(0); iL<nLayers; ++iL){//loop on layers
+	//TH2Poly *histE = geomConv.get2DHist(iL,"E");
+	std::map<unsigned,MergeCells> & histE = geomConv.get2DHist(iL);
+	//TH2Poly *histTime = geomConv.get2DHist(iL,"Time");
+	//TH2Poly *histZ = geomConv.get2DHist(iL,"Z");
+	const HGCSSSubDetector & subdet = myDetector.subDetectorByLayer(iL);
+	bool isScint = subdet.isScint;
+	//nTotBins += histE->GetNumberOfBins();
+	
+	std::map<int,std::pair<double,double> > & geom = isScint?(subdet.type==DetectorEnum::BHCAL1?geomConv.squareGeom1:geomConv.squareGeom2): shape==4?geomConv.squareGeom:shape==2?geomConv.diamGeom:shape==3?geomConv.triangleGeom:geomConv.hexaGeom;
+	
+	unsigned nBins = geom.size();//isScint||shape==4?geomConv.squareMap()->GetNumberOfBins() : shape==2?geomConv.diamondMap()->GetNumberOfBins() : shape==3? geomConv.triangleMap()->GetNumberOfBins() : geomConv.hexagonMap()->GetNumberOfBins();
+	nTotBins += nBins;
+	if (pSaveDigis) lDigiHits.reserve(nTotBins);
+	
+	//double meanZpos = geomConv.getAverageZ(iL);
+	double meanZpos = myDetector.sensitiveZ(iL);
+	double etaBoundary = myDetector.etaBoundary(iL);
+	//extend map to include all cells in eta=1.4-3 region
+	//in eta ring if saving only one eta ring....
+	if (addNoiseHits) {
+	  for (unsigned iB(1); iB<nBins+1;++iB){
+	    std::pair<double,double> xy = geom[iB];
+	    if (isScint) {
+	      HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
+	    }
 
-      unsigned nBins = geom.size();//isScint||shape==4?geomConv.squareMap()->GetNumberOfBins() : shape==2?geomConv.diamondMap()->GetNumberOfBins() : shape==3? geomConv.triangleMap()->GetNumberOfBins() : geomConv.hexagonMap()->GetNumberOfBins();
-      nTotBins += nBins;
-      if (pSaveDigis) lDigiHits.reserve(nTotBins);
-      
-      //double meanZpos = geomConv.getAverageZ(iL);
-      double meanZpos = myDetector.sensitiveZ(iL);
-      double etaBoundary = myDetector.etaBoundary(iL);
-      //extend map to include all cells in eta=1.4-3 region
-      //in eta ring if saving only one eta ring....
-      if (addNoiseHits) {
-	for (unsigned iB(1); iB<nBins+1;++iB){
-	  std::pair<double,double> xy = geom[iB];
-	  if (isScint) {
-	    HGCSSGeometryConversion::convertFromEtaPhi(xy,meanZpos);
+	    double etaPhys = getEtaPhys(xy.first,xy.second,meanZpos,event);
+
+	    ROOT::Math::XYZPoint lpos = ROOT::Math::XYZPoint(xy.first,xy.second,meanZpos);
+	    double etaDet = lpos.eta();
+	    bool passeta = etaDet>1.3 && etaDet<3.0;
+	    if (doEtaSel) passeta = fabs(etaPhys-etamean)<deta;
+	    else {
+	      if (isScint) passeta = etaDet>outerScintBoundary[iL] && etaDet<=etaBoundary; // only simulate noise within the physical bounds of the detector
+	      else passeta = etaDet>etaBoundary && etaDet<3.0;
+	    }
+	    if (!passeta) continue;
+	    MergeCells tmpCell;
+	    tmpCell.energy = 0;
+	    tmpCell.time = 0;
+	    histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
 	  }
-	  ROOT::Math::XYZPoint lpos = ROOT::Math::XYZPoint(xy.first,xy.second,meanZpos);
-	  double eta = lpos.eta();
-	  bool passeta = eta>1.3 && eta<3.0;
-	  if (doEtaSel) passeta = fabs(eta-etamean)<deta;
-	  else {
-	    if (isScint) passeta = eta>outerScintBoundary[iL] && eta<=etaBoundary; // only simulate noise within the physical bounds of the detector
-	    else passeta = eta>etaBoundary && eta<3.0;
-	  }
-	  if (!passeta) continue;
-	  MergeCells tmpCell;
-	  tmpCell.energy = 0;
-	  tmpCell.time = 0;
-	  histE.insert(std::pair<unsigned,MergeCells>(iB,tmpCell));
-	}
-      }
-
-      //std::cout << iL << " " << meanZpos << " map size " << histE.size() << std::endl;
-
-      if (debug>0){
-	std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
-		  << " bins = " << nBins << " histE entries = " << histE.size() << std::endl;
-      }
-
-      //cell-to-cell cross-talk for scintillator
-      if (isScint){
-	//2.5% per 30-mm edge
-	//myDigitiser.setIPCrossTalk(0.025*geomConv.cellSize(iL,0)/30.);
-      }
-      else {
-	myDigitiser.setIPCrossTalk(0);
-      }
-
-      //processHist(iL,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
-
-      processHist(iL,histE,geom,myDigitiser,p_noise,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
- 
-    }//loop on layers
-
-    if (debug) {
-      std::cout << " **DEBUG** sim-digi-reco hits = " << (*hitvec).size() << "-" << lDigiHits.size() << "-" << lRecoHits.size() << std::endl;
-    }
-    
-    
-    if (pMakeJets){//pMakeJets
-      
-      // run the clustering, extract the jets
-      ClusterSequence cs(lParticles, jet_def);
-      std::vector<PseudoJet> jets = sorted_by_pt(cs.inclusive_jets());
-      
-      // print the jets
-      std::cout <<   "-- evt " << ievt << ": found " << jets.size() << " Jets." << std::endl;
-      for (unsigned i = 0; i < jets.size(); i++) {
-	const PseudoJet & lFastJet = jets[i];
-	//TOFIX // inverted y and z...
-	HGCSSRecoJet ljet(lFastJet.px(),
-			  lFastJet.py(),
-			  lFastJet.pz(),
-			  lFastJet.E());
-	if (lFastJet.has_constituents()) ljet.nConstituents(lFastJet.constituents().size());
-	if (lFastJet.has_area()){
-	  ljet.area(lFastJet.area());
-	  ljet.area_error(lFastJet.area_error());
 	}
 	
-	lCaloJets.push_back(ljet);
-	std::cout << " -------- jet " << i << ": "
-		  << lFastJet.E() << " " 
-		  << lFastJet.perp() << " " 
-		  << lFastJet.rap() << " " << lFastJet.phi() << " "
-		  << lFastJet.constituents().size() << std::endl;
-	// std::vector<PseudoJet> constituents = lFastJet.constituents();
-	// for (unsigned j = 0; j < constituents.size(); j++) {
-	//   std::cout << "    constituent " << j << "'s pt: " << constituents[j].perp()
-	// 	      << std::endl;
-	// }
+	//std::cout << iL << " " << meanZpos << " map size " << histE.size() << std::endl;
+	
+	if (debug>0){
+	  std::cout << " -- Layer " << iL << " " << subdet.name << " z=" << meanZpos
+		    << " bins = " << nBins << " histE entries = " << histE.size() << std::endl;
+	}
+	
+	//cell-to-cell cross-talk for scintillator
+	if (isScint){
+	  //2.5% per 30-mm edge
+	  //myDigitiser.setIPCrossTalk(0.025*geomConv.cellSize(iL,0)/30.);
+	}
+	else {
+	  myDigitiser.setIPCrossTalk(0);
+	}
+	
+	//processHist(iL,histE,myDigitiser,p_noise,histZ,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+	
+	processHist(iL,histE,geom,myDigitiser,p_noise,meanZpos,isTBsetup,subdet,pThreshInADC,pSaveDigis,lDigiHits,lRecoHits,pMakeJets,lParticles);
+	
+      }//loop on layers
+      
+      if (debug) {
+	std::cout << " **DEBUG** sim-digi-reco hits = " << (*hitvec).size() << "-" << lDigiHits.size() << "-" << lRecoHits.size() << std::endl;
       }
       
-    }//pMakeJets
-    
-    outputTree->Fill();
+      
+      if (pMakeJets){//pMakeJets
+	
+	// run the clustering, extract the jets
+	ClusterSequence cs(lParticles, jet_def);
+	std::vector<PseudoJet> jets = sorted_by_pt(cs.inclusive_jets());
+	
+	// print the jets
+	std::cout <<   "-- evt " << ievt << ": found " << jets.size() << " Jets." << std::endl;
+	for (unsigned i = 0; i < jets.size(); i++) {
+	  const PseudoJet & lFastJet = jets[i];
+	  //TOFIX // inverted y and z...
+	  HGCSSRecoJet ljet(lFastJet.px(),
+			    lFastJet.py(),
+			    lFastJet.pz(),
+			    lFastJet.E());
+	  if (lFastJet.has_constituents()) ljet.nConstituents(lFastJet.constituents().size());
+	  if (lFastJet.has_area()){
+	    ljet.area(lFastJet.area());
+	    ljet.area_error(lFastJet.area_error());
+	  }
+	  
+	  lCaloJets.push_back(ljet);
+	  std::cout << " -------- jet " << i << ": "
+		    << lFastJet.E() << " " 
+		    << lFastJet.perp() << " " 
+		    << lFastJet.rap() << " " << lFastJet.phi() << " "
+		    << lFastJet.constituents().size() << std::endl;
+	  // std::vector<PseudoJet> constituents = lFastJet.constituents();
+	  // for (unsigned j = 0; j < constituents.size(); j++) {
+	  //   std::cout << "    constituent " << j << "'s pt: " << constituents[j].perp()
+	  // 	      << std::endl;
+	  // }
+	}
+	
+      }//pMakeJets
+      
+      outputTree->Fill();
+
+    }//filter on genParts if etasel
+
     //reserve necessary space and clear vectors.
     if (lSimHits.size() > maxSimHits) {
       maxSimHits = 2*lSimHits.size();
@@ -944,17 +997,22 @@ int main(int argc, char** argv){//main
       maxRecJets = 2*lCaloJets.size();
       std::cout << " -- INFO: event " << ievt << " maxRecJets updated to " << maxRecJets << std::endl;
     }
+    if (lGenParts.size() > maxGenParts) {
+      maxGenParts = 2*lGenParts.size();
+      std::cout << " -- INFO: event " << ievt << " maxGenParts updated to " << maxGenParts << std::endl;
+    }
     lSimHits.clear();
     lDigiHits.clear();
     lRecoHits.clear();
     lCaloJets.clear();
+    lGenParts.clear();
     geomConv.initialiseHistos();
     lParticles.clear();
     if (pSaveSims) lSimHits.reserve(maxSimHits);
     lRecoHits.reserve(maxRecHits);
     lParticles.reserve(maxRecHits);
     lCaloJets.reserve(maxRecJets);
-    
+    lGenParts.reserve(maxGenParts);
   }//loop on entries
 
   outputFile->cd();

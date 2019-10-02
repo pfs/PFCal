@@ -59,6 +59,7 @@ int main(int argc, char** argv){//main
   std::string inFilePath;
   std::string outFilePath;
   unsigned nRuns;
+  unsigned startIdx;
   unsigned debug;
   double etamean;
   double deta;
@@ -74,6 +75,7 @@ int main(int argc, char** argv){//main
     ("inFilePath,i",   po::value<std::string>(&inFilePath)->required())
     ("outFilePath,o",  po::value<std::string>(&outFilePath)->required())
     ("nRuns",        po::value<unsigned>(&nRuns)->default_value(0))
+    ("startIdx",     po::value<unsigned>(&startIdx)->default_value(0))
     ("debug,d",        po::value<unsigned>(&debug)->default_value(0))
     ("etamean,e",      po::value<double>(&etamean)->default_value(2.8))
     ("deta",      po::value<double>(&deta)->default_value(0.05))
@@ -102,11 +104,13 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
 
   //fix for eta=2.8 digi which did not have noise only added...
-  const bool addNoiseOnly = etamean>=2.7?true:false;
+  const bool addNoiseOnly = false;//etamean>=2.7?true:false;
 
+  //to run faster....
+  const bool filter0noise = true;
   //works for both small and large cells...
 
-  const double neighRadius = 13;//mm for 6 closest neighbours
+  const double neighRadius = etamean >= 2.4 ? 9 : 13;//mm for 6 closest neighbours
 
   const double sizeFH = 2./360.;//0.01745;
   const double sizeBH = 2./288.;//0.02182;
@@ -153,16 +157,19 @@ int main(int argc, char** argv){//main
   /////////////////////////////////////////////////////////////
   TChain *lTree = new TChain("RecoTree");
   TFile * recFile = 0;
+  TFile * lastrecFile = 0;
   if (nRuns == 0){
     if (!testInputFile(inFilePath,recFile)) return 1;
     lTree->AddFile(inFilePath.c_str());
+    lastrecFile = recFile;
   }
   else {
-    for (unsigned i(0);i<nRuns;++i){
+    for (unsigned i(startIdx);i<startIdx+nRuns;++i){
       std::ostringstream lstrrec;
       lstrrec << inFilePath << "_run" << i << ".root";
       if (!testInputFile(lstrrec.str(),recFile)) continue;
       lTree->AddFile(lstrrec.str().c_str());
+      lastrecFile = recFile;
     }
   }
   if (!lTree){
@@ -173,7 +180,7 @@ int main(int argc, char** argv){//main
   std::cout << " Trees added." << std::endl;
 
 
-  HGCSSInfo * info=(HGCSSInfo*)recFile->Get("Info");
+  HGCSSInfo * info=(HGCSSInfo*)lastrecFile->Get("Info");
 
   assert(info);
   //info->Print();
@@ -244,6 +251,11 @@ int main(int argc, char** argv){//main
   outputFile->cd();
 
   TTree *miptree=new TTree("MipTree","HGC MipAnalysis tree");
+
+  HGCSSGenParticleVec lGenParts;
+  miptree->Branch("HGCSSGenParticleVec","std::vector<HGCSSGenParticle>",&lGenParts);
+
+
   std::vector<HGCSSMipHitVec> miphitvec;
   HGCSSMipHitVec init;
   //need to init such that the vector is not moved around in memory!!
@@ -268,16 +280,27 @@ int main(int argc, char** argv){//main
   //loop on events
   HGCSSEvent * event = 0;
   std::vector<HGCSSRecoHit> * rechitvec = 0;
+  std::vector<HGCSSGenParticle> * genvec = 0;
   unsigned nPuVtx = 0;
 
   lTree->SetBranchAddress("HGCSSEvent",&event);
   lTree->SetBranchAddress("HGCSSRecoHitVec",&rechitvec);
+  if (lTree->GetBranch("HGCSSGenParticleVec")) lTree->SetBranchAddress("HGCSSGenParticleVec",&genvec);
+  else genvec = new std::vector<HGCSSGenParticle>;
   if (lTree->GetBranch("nPuVtx")) lTree->SetBranchAddress("nPuVtx",&nPuVtx);
 
   for (unsigned ievt(0); ievt<nEvts; ++ievt){//loop on entries
     if (debug) std::cout << "... Processing entry: " << ievt << std::endl;
     else if (ievt%50 == 0) std::cout << "... Processing entry: " << ievt << std::endl;
     lTree->GetEntry(ievt);
+
+    //save genparticles
+    lGenParts.clear();
+    lGenParts.reserve((*genvec).size());
+    for (unsigned iP(0); iP<(*genvec).size(); ++iP){//loop on gen particles
+      HGCSSGenParticle lPart = (*genvec)[iP];
+      lGenParts.push_back(lPart);
+    }
 
 
     //add noise only contributions: need to be done consistently for the event... i.e. same cell can be neighbour to several hits....
@@ -404,20 +427,28 @@ int main(int argc, char** argv){//main
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
       HGCSSRecoHit lHit = (*rechitvec)[iH];
       double leta = lHit.eta();
+      //@FIXME should be etaphys....
       if (fabs(leta-etamean)>= deta){
-	//rechitvec->erase(rechitvec->begin()+iH);
-	//--iH;
+	rechitvec->erase(rechitvec->begin()+iH);
+	--iH;
 	notInEtaRange++;
+	//cut already applied at digi, should be in etaphys....
 	continue;
       }
-      unsigned layer = lHit.layer();
-      if (layer>=myDetector.nLayers()) {
+      //unsigned layer = lHit.layer();
+      //if (layer>=myDetector.nLayers()) {
 	//rechitvec->erase(rechitvec->begin()+iH);
 	//--iH;
-	notInLayerRange++;
+	//notInLayerRange++;
+	//continue;
+      //}
+
+      
+      if (filter0noise && lHit.energy()<0.1) {
+	rechitvec->erase(rechitvec->begin()+iH);
+	--iH;
 	continue;
       }
-
       bool passOne = false;
       for (unsigned iN(0); iN<nNoise;++iN){
 	double lNoise = lRndm.Gaus(0,noise[iN]);
@@ -426,8 +457,8 @@ int main(int argc, char** argv){//main
 	if (hitEnergy[iN][iH]>threshMin) passOne=true;
       }
       if (!passOne) {
-	//rechitvec->erase(rechitvec->begin()+iH);
-	//--iH;
+	rechitvec->erase(rechitvec->begin()+iH);
+	--iH;
 	continue;
       }
       isSelected[iH] = true;
@@ -448,7 +479,7 @@ int main(int argc, char** argv){//main
 
     unsigned passSel[3] = {0,0,0};
     for (unsigned iH(0); iH<(*rechitvec).size(); ++iH){//loop on hits
-      if (!isSelected[iH]) continue;
+      if (!filter0noise && !isSelected[iH]) continue;
       if (debug>1) std::cout << "...... Processing hit: " << iH << std::endl;
       else if (debug==1 && iH%1000 == 0) std::cout << "...... Processing hit: " << iH/1000 << "k" << std::endl;
       bool pass[nNoise];
@@ -468,7 +499,10 @@ int main(int argc, char** argv){//main
       unsigned newhitlayer = newLid[lCentralHit.layer()];
       double hitposx = lCentralHit.get_x();
       double hitposy = lCentralHit.get_y();
-      double hiteta = lCentralHit.eta();
+      double hitposz = lCentralHit.get_z();
+      double etaPhys = getEtaPhys(hitposx,hitposy,hitposz,event);
+
+      double hiteta = etaPhys;//lCentralHit.eta();
       double hitphi = lCentralHit.phi();
       double hittheta = 2*atan(exp(-hiteta));
       double sincos = sin(hittheta)*cos(hitphi);
@@ -478,7 +512,7 @@ int main(int argc, char** argv){//main
 	myHit[iN].setE(hitEnergy[iN][iH]);
 	myHit[iN].setx(hitposx);
 	myHit[iN].sety(hitposy);
-	myHit[iN].setz(lCentralHit.get_z());
+	myHit[iN].setz(hitposz);
 	myHit[iN].setLayer(hitlayer);
 	myHit[iN].setnoiseFrac(lCentralHit.noiseFraction());
       }
@@ -507,7 +541,7 @@ int main(int argc, char** argv){//main
 
       //loop on hits to find neighbours
       for (unsigned jH(0); jH<(*rechitvec).size(); ++jH){//loop on hits
-	if (!isSelected[jH]) continue;
+	if (!filter0noise && !isSelected[jH]) continue;
 	if (jH==iH) continue;
 	HGCSSRecoHit lHit = (*rechitvec)[jH];
 	unsigned newlayer = newLid[lHit.layer()];

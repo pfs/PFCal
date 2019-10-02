@@ -17,6 +17,7 @@ public:
     xpos_(0),
     ypos_(0),
     zpos_(0),
+    layer_(0),
     mass_(0),
     px_(0),
     py_(0),
@@ -44,6 +45,9 @@ public:
   };
   inline double z() const {
     return zpos_;
+  };
+  inline unsigned layer() const {
+    return layer_;
   };
   inline double px() const {
     return px_;
@@ -112,6 +116,9 @@ public:
   inline void mass(const double & val) {
     mass_ = val;
   };
+  inline void layer(const unsigned & val) {
+    layer_ = val;
+  };
   inline void time(const double & val) {
     time_ = val;
   };
@@ -139,6 +146,7 @@ private:
   double xpos_;
   double ypos_;
   double zpos_;
+  unsigned layer_;
   double mass_;
   double px_;
   double py_;

@@ -192,9 +192,9 @@ for et in enlist :
     condorFile.write('universe = vanilla\n')
     condorFile.write('+JobFlavour = "nextweek"\n')
     condorFile.write('Executable = %s/runJob.sh\n'%outDir)
-    condorFile.write('Output = %s/condorTree.out\n'%outDir)
-    condorFile.write('Error = %s/condorTree.err\n'%outDir)
-    condorFile.write('Log = %s/condorTree.log\n'%outDir)
+    condorFile.write('Output = %s/condorG4.out\n'%outDir)
+    condorFile.write('Error = %s/condorG4.err\n'%outDir)
+    condorFile.write('Log = %s/condorG4.log\n'%outDir)
     condorFile.write('Queue 1\n')
     condorFile.close()
 

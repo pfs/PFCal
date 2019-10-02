@@ -16,6 +16,9 @@
 
 #include "TFile.h"
 
+#include "HGCSSEvent.hh"
+
+
 typedef KDTreeLinkerAlgo<unsigned,3> KDTree;
 typedef KDTreeNodeInfoT<unsigned,3> KDNode;
 
@@ -201,4 +204,18 @@ double absWeight(const unsigned layer, const bool dedx=true){
     if (layer == 29) return 1.1047;
   }
   return 1;
+};
+
+double getEtaPhys(const double & posx,
+		  const double & posy,
+		  const double & posz,
+		  const HGCSSEvent * event){
+
+    double posxcor = posx-event->vtx_x();
+    double posycor = posy-event->vtx_y();
+    double poszcor = posz-event->vtx_z();
+    double r3d = sqrt(pow(posxcor,2)+pow(posycor,2)+pow(poszcor,2));
+    double thetaPhys = acos(fabs(poszcor)/r3d);
+    double etaPhys = (poszcor)>0? -1.*log(tan(thetaPhys/2.)) : log(tan(thetaPhys/2.));
+    return etaPhys;
 };

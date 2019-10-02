@@ -95,7 +95,7 @@ nPuVtxlist=[int(x) for x in opt.nPuVtx.split(',')]
 
 #to turn off add noise only hits: can be slow for muon files for example. 
 #Default should be true.
-addNoise='false'
+addNoise='true'
 
 #in %
 interCalibList=[3];#0,1,2,3,4,5,10,15,20,50]
