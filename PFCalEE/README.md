@@ -16,7 +16,7 @@ https://twiki.cern.ch/twiki/bin/view/Sandbox/AnnemarieMagnanSandbox
 for what needs to be put in the homemade classes and makefile for root to
 understand them (see also example in class userlib/include/HGCSSSimHit.hh).
 
-## Setup the environment (SLC6)
+## Setup the environment
 
 source g4env.sh
 
