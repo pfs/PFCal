@@ -1,4 +1,19 @@
+#!/bin/bash
+
 export USERBASE=`pwd`
+export G4Build=${USERBASE}/g4build
+
+source /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.22.06/x86_64-centos7-gcc48-opt/bin/thisroot.sh 
+
+export BASEINSTALL=/cvmfs/sft.cern.ch/lcg/views/LCG_99/x86_64-centos7-gcc8-opt/
+source ${BASEINSTALL}/setup.sh
+
+export FASTJET_INSTALL=/cvmfs/sft.cern.ch/lcg/releases/fastjet/3.3.4-0d9d5/x86_64-centos7-gcc8-opt
+
+export G4BASE=/cvmfs/geant4.cern.ch/geant4/10.7/x86_64-centos7-gcc8-optdeb
+
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BASEINSTALL}/lib64:${USERBASE}/userlib/lib:${USERBASE}/analysis/lib
+
 #slc6 setup
 #ARCH=x86_64-slc6-gcc46-opt
 #source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/${ARCH}/setup.sh 
@@ -9,22 +24,23 @@ export USERBASE=`pwd`
 #export HEPMC_DIR=/afs/cern.ch/sw/lcg/external/HepMC/2.06.08/${ARCH}/
 #export FASTJET_INSTALL=/afs/cern.ch/sw/lcg/external/fastjet/3.0.3/${ARCH}/
 
-export BASEINSTALL=/cvmfs/sft.cern.ch/lcg/views/LCG_97/x86_64-centos7-gcc8-opt/
+#export BASEINSTALL=/cvmfs/sft.cern.ch/lcg/views/LCG_97/x86_64-centos7-gcc8-opt/
 
-source ${BASEINSTALL}/setup.sh
+#source ${BASEINSTALL}/setup.sh
 
-#cd $G4INSTALL/share/Geant4-10.6.1/geant4make/
-#source geant4make.sh
-#cd - &> /dev/null
+cd ${G4BASE}/share/Geant4-10.7.0/geant4make/
+source geant4make.sh
+cd - &> /dev/null
 
-export G4DIR=$G4INSTALL/lib64
+export G4DIR=${G4BASE}/lib64
 mkdir -p $USERBASE/g4build
-export G4Build=$USERBASE/g4build
-
-export HepMC_DIR=/cvmfs/sft.cern.ch/lcg/releases/HepMC/2.06.10-1a364/x86_64-centos7-gcc8-opt/
 
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BASEINSTALL}/lib64:${HepMC_DIR}/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib
+#export HepMC_DIR=/cvmfs/sft.cern.ch/lcg/releases/HepMC/2.06.10-1a364/x86_64-centos7-gcc8-opt/
+#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BASEINSTALL}/lib64:${HepMC_DIR}/lib:$USERBASE/userlib/lib:$USERBASE/analysis/lib
+
+
+
 #slc6 setup
 #source /afs/cern.ch/sw/lcg/contrib/gcc/4.6/x86_64-slc6/setup.sh
 #cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.18/${ARCH}/root/
@@ -32,4 +48,4 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BASEINSTALL}/lib64:${HepMC_DIR}/lib:$U
 #source bin/thisroot.sh
 #cd - &> /dev/null
 #export PATH=$DAWNHOME/bin:$PATH:$FASTJET_INSTALL/bin
-export PATH=$PATH:${BASEINSTALL}/bin:${G4Build}
+#export PATH=$PATH:${BASEINSTALL}/bin:${G4Build}

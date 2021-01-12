@@ -12,7 +12,7 @@ USERINCLUDES += `root-config --cflags --libs`
 USERINCLUDES += -Iinclude/ -I../userlib/include/ -I$(BASEINSTALL)/include/
 
 # Define libraries to link
-USERLIBS += $(shell root-config --glibs) -lGenVector # -lTreePlayer -lTMVA
+USERLIBS += $(shell root-config --glibs) -lGenVector -lROOTNTuple# -lTreePlayer -lTMVA
 #USERLIBS += -L$(CMS_PATH)/$(SCRAM_ARCH)/external/boost/1.47.0/lib/ -lboost_regex -lboost_program_options -lboost_filesystem
 USERLIBS += -Wl,-rpath, -L$(BASEINSTALL)/lib -lfastjettools -lfastjet -lfastjetplugins -lsiscone_spherical -lsiscone -lgfortran
 USERLIBS += -lboost_regex -lboost_program_options -lboost_filesystem

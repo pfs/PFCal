@@ -975,6 +975,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSSimHitgR);
       instance.SetDestructor(&destruct_vectorlEHGCSSSimHitgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSSimHit> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSSimHit>","std::vector<HGCSSSimHit, std::allocator<HGCSSSimHit> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1038,6 +1040,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSSamplingSectiongR);
       instance.SetDestructor(&destruct_vectorlEHGCSSSamplingSectiongR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSSamplingSection> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSSamplingSection>","std::vector<HGCSSSamplingSection, std::allocator<HGCSSSamplingSection> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1101,6 +1105,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSRecoJetgR);
       instance.SetDestructor(&destruct_vectorlEHGCSSRecoJetgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSRecoJet> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSRecoJet>","std::vector<HGCSSRecoJet, std::allocator<HGCSSRecoJet> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1164,6 +1170,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSRecoHitgR);
       instance.SetDestructor(&destruct_vectorlEHGCSSRecoHitgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSRecoHit> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSRecoHit>","std::vector<HGCSSRecoHit, std::allocator<HGCSSRecoHit> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1227,6 +1235,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSMipHitgR);
       instance.SetDestructor(&destruct_vectorlEHGCSSMipHitgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSMipHit> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSMipHit>","std::vector<HGCSSMipHit, std::allocator<HGCSSMipHit> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1290,6 +1300,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSGenParticlegR);
       instance.SetDestructor(&destruct_vectorlEHGCSSGenParticlegR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSGenParticle> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSGenParticle>","std::vector<HGCSSGenParticle, std::allocator<HGCSSGenParticle> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1353,6 +1365,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_vectorlEHGCSSClustergR);
       instance.SetDestructor(&destruct_vectorlEHGCSSClustergR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<HGCSSCluster> >()));
+
+      ::ROOT::AddClassAlternate("vector<HGCSSCluster>","std::vector<HGCSSCluster, std::allocator<HGCSSCluster> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1416,6 +1430,8 @@ namespace ROOT {
       instance.SetDeleteArray(&deleteArray_maplEHGCSSRecoHitmUcOdoublegR);
       instance.SetDestructor(&destruct_maplEHGCSSRecoHitmUcOdoublegR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::MapInsert< map<HGCSSRecoHit*,double> >()));
+
+      ::ROOT::AddClassAlternate("map<HGCSSRecoHit*,double>","std::map<HGCSSRecoHit*, double, std::less<HGCSSRecoHit*>, std::allocator<std::pair<HGCSSRecoHit* const, double> > >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -1469,8 +1485,8 @@ namespace {
 0
     };
     static const char* includePaths[] = {
-"/cvmfs/sft.cern.ch/lcg/releases/ROOT/v6.20.02-10e75/x86_64-centos7-gcc8-opt/include/",
-"/afs/cern.ch/user/a/amagnan/SLHC/PFCal/PFCalEE/userlib/",
+"/cvmfs/sft.cern.ch/lcg/releases/ROOT/6.22.00-dd202/x86_64-centos7-gcc8-opt/include/",
+"/afs/cern.ch/work/p/psilva/HGCal/Standalone/move2cc7/PFCal/PFCalEE/userlib/",
 0
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(
@@ -1478,7 +1494,7 @@ namespace {
 #pragma clang diagnostic ignored "-Wkeyword-compat"
 #pragma clang diagnostic ignored "-Wignored-attributes"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
-extern int __Cling_Autoloading_Map;
+extern int __Cling_AutoLoading_Map;
 class __attribute__((annotate("$clingAutoload$HGCSSSamplingSection.hh")))  HGCSSSamplingSection;
 namespace std{template <typename _Tp> class __attribute__((annotate("$clingAutoload$bits/allocator.h")))  __attribute__((annotate("$clingAutoload$string")))  allocator;
 }
